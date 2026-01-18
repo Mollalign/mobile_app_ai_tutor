@@ -26,7 +26,7 @@ class SplashScreen extends ConsumerWidget {
             
             // App name
             Text(
-              'Informatics Tutor',
+              'Learn With AI-Tutor',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
