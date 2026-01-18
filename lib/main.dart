@@ -1,65 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'app/app.dart';
+import 'core/network/network.dart';
+
+void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize API client
+  ApiClient().init(
+    onLogout: () {
+      // This will be called when token refresh fails
+      // Navigation will be handled by auth state listener
+      debugPrint('Session expired, logging out...');
+    },
+  );
+
+  // Run app with Riverpod
+  runApp(
+    const ProviderScope(
+      child: InformaticsTutorApp(),
+    ),
+  );
 }
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      home: const HomePage(),
-      );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Home"),),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context, 
-              MaterialPageRoute(
-                builder: (context) => const DetailsPage()
-              )
-            );
-          },
-          child: const Text("Go to Details"),
-        ),
-      ),
-    );
-  }
-}
-
-
-class DetailsPage extends StatelessWidget {
-  const DetailsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Detail"),),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text("Go Back"),
-        ),
-      ),
-    );
-  }
-}
-  
-
-
