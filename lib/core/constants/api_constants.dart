@@ -12,7 +12,7 @@ class ApiConstants {
   // For Android emulator use: 10.0.2.2 (maps to host localhost)
   // For iOS simulator use: localhost or 127.0.0.1
   // For real device: use your machine's IP or deployed URL
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'https://s2jnklp5-8000.uks1.devtunnels.ms';
 
   // API version prefix
   static const String apiPrefix = '/api/v1';
