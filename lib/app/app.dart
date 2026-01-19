@@ -13,7 +13,7 @@ class InformaticsTutorApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Informatics Tutor',
+      title: 'Ai Tutor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
