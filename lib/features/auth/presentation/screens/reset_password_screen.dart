@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
@@ -42,6 +43,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(passwordResetNotifierProvider);
     final isLoading = state is PasswordResetLoading;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     // Get email and code from state
     String? email;
@@ -59,7 +62,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go(AppRoutes.forgotPassword);
       });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: colorScheme.primary,
+          ),
+        ),
+      );
     }
 
     // Listen for state changes
@@ -71,23 +80,37 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             context: context,
             barrierDismissible: false,
             builder: (context) => AlertDialog(
-              icon: Icon(
-                Icons.check_circle,
-                color: Colors.green.shade400,
-                size: 64,
+              icon: Container(
+                padding: AppSpacing.paddingAllMd,
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: colorScheme.tertiary,
+                  size: 48,
+                ),
               ),
               title: const Text('Password Reset!'),
-              content: const Text(
+              content: Text(
                 'Your password has been successfully reset. You can now log in with your new password.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
               ),
               actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ref.read(passwordResetNotifierProvider.notifier).reset();
-                    context.go(AppRoutes.login);
-                  },
-                  child: const Text('Go to Login'),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      ref.read(passwordResetNotifierProvider.notifier).reset();
+                      context.go(AppRoutes.login);
+                    },
+                    child: const Text('Go to Login'),
+                  ),
                 ),
               ],
             ),
@@ -97,7 +120,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: colorScheme.error,
             ),
           );
         },
@@ -114,100 +137,128 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           },
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              colorScheme.tertiary.withAlpha(15),
+              colorScheme.surface,
+            ],
+            stops: const [0.0, 0.25],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: AppSpacing.paddingAllLg,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
 
-                // Icon
-                Icon(
-                  Icons.lock_outline,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  'Create New Password',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-
-                // Description
-                Text(
-                  'Your new password must be different from previously used passwords.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-
-                // New password field
-                AuthTextField(
-                  controller: _passwordController,
-                  label: 'New Password',
-                  hint: 'Enter new password',
-                  obscureText: _obscurePassword,
-                  prefixIcon: Icons.lock_outlined,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                  // Icon
+                  Container(
+                    padding: AppSpacing.paddingAllMd,
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer,
+                      shape: BoxShape.circle,
                     ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                  ),
-                  validator: Validators.password,
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm password field
-                AuthTextField(
-                  controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hint: 'Confirm new password',
-                  obscureText: _obscureConfirmPassword,
-                  prefixIcon: Icons.lock_outlined,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                    child: Icon(
+                      Icons.lock_outline,
+                      size: 48,
+                      color: colorScheme.tertiary,
                     ),
-                    onPressed: () {
-                      setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
-                    },
                   ),
-                  validator: (value) => Validators.confirmPassword(
-                    value,
-                    _passwordController.text,
-                  ),
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.lg),
 
-                // Submit button
-                AuthButton(
-                  onPressed: isLoading || email == null || code == null
-                      ? null
-                      : () => _handleSubmit(email!, code!),
-                  isLoading: isLoading,
-                  label: 'Reset Password',
-                ),
-              ],
+                  // Title
+                  Text(
+                    'Create New Password',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // Description
+                  Text(
+                    'Your new password must be different from previously used passwords.',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // New password field
+                  AuthTextField(
+                    controller: _passwordController,
+                    label: 'New Password',
+                    hint: 'Enter new password',
+                    obscureText: _obscurePassword,
+                    prefixIcon: Icons.lock_outlined,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                    ),
+                    validator: Validators.password,
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Confirm password field
+                  AuthTextField(
+                    controller: _confirmPasswordController,
+                    label: 'Confirm Password',
+                    hint: 'Confirm new password',
+                    obscureText: _obscureConfirmPassword,
+                    prefixIcon: Icons.lock_outlined,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                      },
+                    ),
+                    validator: (value) => Validators.confirmPassword(
+                      value,
+                      _passwordController.text,
+                    ),
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: email != null && code != null 
+                        ? (_) => _handleSubmit(email!, code!) 
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Submit button
+                  AuthButton(
+                    onPressed: isLoading || email == null || code == null
+                        ? null
+                        : () => _handleSubmit(email!, code!),
+                    isLoading: isLoading,
+                    label: 'Reset Password',
+                  ),
+                ],
+              ),
             ),
           ),
         ),

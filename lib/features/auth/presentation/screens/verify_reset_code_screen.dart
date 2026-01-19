@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
@@ -36,7 +37,10 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
   void _handleResend(String email) {
     ref.read(passwordResetNotifierProvider.notifier).requestCode(email: email);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('New code sent!')),
+      SnackBar(
+        content: const Text('New code sent!'),
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
+      ),
     );
   }
 
@@ -44,6 +48,8 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(passwordResetNotifierProvider);
     final isLoading = state is PasswordResetLoading;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     // Get email from state using pattern matching
     final email = switch (state) {
@@ -57,7 +63,13 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go(AppRoutes.forgotPassword);
       });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: colorScheme.primary,
+          ),
+        ),
+      );
     }
 
     // Listen for state changes
@@ -69,7 +81,7 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: colorScheme.error,
             ),
           );
         default:
@@ -87,87 +99,117 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
           },
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              colorScheme.secondary.withAlpha(15),
+              colorScheme.surface,
+            ],
+            stops: const [0.0, 0.25],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: AppSpacing.paddingAllLg,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
 
-                // Icon
-                Icon(
-                  Icons.mark_email_read_outlined,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  'Check Your Email',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  // Icon
+                  Container(
+                    padding: AppSpacing.paddingAllMd,
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.mark_email_read_outlined,
+                      size: 48,
+                      color: colorScheme.secondary,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.lg),
 
-                // Description
-                Text(
-                  'We sent a 6-digit code to\n${email ?? "your email"}',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey,
+                  // Title
+                  Text(
+                    'Check Your Email',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.sm),
 
-                // Code input field
-                AuthTextField(
-                  controller: _codeController,
-                  label: 'Verification Code',
-                  hint: 'Enter 6-digit code',
-                  keyboardType: TextInputType.number,
-                  prefixIcon: Icons.pin_outlined,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the code';
-                    }
-                    if (value.length != 6) {
-                      return 'Code must be 6 digits';
-                    }
-                    if (!RegExp(r'^\d{6}$').hasMatch(value)) {
-                      return 'Code must contain only digits';
-                    }
-                    return null;
-                  },
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 24),
+                  // Description
+                  Text(
+                    'We sent a 6-digit code to\n${email ?? "your email"}',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
 
-                // Verify button
-                AuthButton(
-                  onPressed: isLoading || email == null
-                      ? null
-                      : () => _handleSubmit(email),
-                  isLoading: isLoading,
-                  label: 'Verify Code',
-                ),
-                const SizedBox(height: 16),
+                  // Code input field
+                  AuthTextField(
+                    controller: _codeController,
+                    label: 'Verification Code',
+                    hint: 'Enter 6-digit code',
+                    keyboardType: TextInputType.number,
+                    prefixIcon: Icons.pin_outlined,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the code';
+                      }
+                      if (value.length != 6) {
+                        return 'Code must be 6 digits';
+                      }
+                      if (!RegExp(r'^\d{6}$').hasMatch(value)) {
+                        return 'Code must contain only digits';
+                      }
+                      return null;
+                    },
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: email != null ? (_) => _handleSubmit(email) : null,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
 
-                // Resend link
-                Center(
-                  child: TextButton(
+                  // Verify button
+                  AuthButton(
                     onPressed: isLoading || email == null
                         ? null
-                        : () => _handleResend(email),
-                    child: const Text("Didn't receive code? Resend"),
+                        : () => _handleSubmit(email),
+                    isLoading: isLoading,
+                    label: 'Verify Code',
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Resend link
+                  Center(
+                    child: TextButton(
+                      onPressed: isLoading || email == null
+                          ? null
+                          : () => _handleResend(email),
+                      child: Text(
+                        "Didn't receive code? Resend",
+                        style: TextStyle(
+                          color: isLoading || email == null
+                              ? colorScheme.onSurfaceVariant.withAlpha(128)
+                              : colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
