@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../app/theme_provider.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../auth/presentation/providers/providers.dart';
 
@@ -129,15 +130,7 @@ class ProfileTab extends ConsumerWidget {
             },
           ),
 
-          _buildSettingsTile(
-            context,
-            icon: LucideIcons.palette,
-            title: 'Appearance',
-            subtitle: 'Theme, colors',
-            onTap: () {
-              // TODO: Appearance settings
-            },
-          ),
+          _buildThemeTile(context, ref),
 
           _buildSettingsTile(
             context,
@@ -257,6 +250,96 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
+  Widget _buildThemeTile(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final themeMode = ref.watch(themeModeProvider);
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: AppRadius.borderRadiusSm,
+        ),
+        child: Icon(
+          themeMode.icon,
+          size: 20,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      title: Text(
+        'Appearance',
+        style: textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        themeMode.displayName,
+        style: textTheme.bodySmall,
+      ),
+      trailing: _ThemeModeSelector(
+        currentMode: themeMode,
+        onChanged: (mode) {
+          ref.read(themeModeProvider.notifier).setThemeMode(mode);
+        },
+      ),
+      onTap: () => _showThemeBottomSheet(context, ref),
+    );
+  }
+
+  void _showThemeBottomSheet(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final currentMode = ref.read(themeModeProvider);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Choose Theme',
+              style: textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ...ThemeMode.values.map((mode) => RadioListTile<ThemeMode>(
+              value: mode,
+              groupValue: currentMode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+              title: Text(mode.displayName),
+              secondary: Icon(mode.icon),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.borderRadiusMd,
+              ),
+            )),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -302,6 +385,56 @@ class ProfileTab extends ConsumerWidget {
             child: const Text('Logout'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact theme mode selector widget.
+class _ThemeModeSelector extends StatelessWidget {
+  final ThemeMode currentMode;
+  final ValueChanged<ThemeMode> onChanged;
+
+  const _ThemeModeSelector({
+    required this.currentMode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: AppRadius.borderRadiusSm,
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: ThemeMode.values.map((mode) {
+          final isSelected = mode == currentMode;
+          return GestureDetector(
+            onTap: () => onChanged(mode),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected 
+                    ? colorScheme.primary 
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                mode.icon,
+                size: 16,
+                color: isSelected 
+                    ? colorScheme.onPrimary 
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
