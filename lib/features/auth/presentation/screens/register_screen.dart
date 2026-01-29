@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
@@ -46,6 +47,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState is AuthStateLoading;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     // Listen for errors
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
@@ -53,7 +56,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -66,125 +69,148 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           onPressed: () => context.go(AppRoutes.login),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Text(
-                  'Create Account',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Start your learning journey',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Full name field
-                AuthTextField(
-                  controller: _nameController,
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
-                  prefixIcon: Icons.person_outlined,
-                  validator: Validators.name,
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Email field
-                AuthTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'Enter your email',
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
-                  validator: Validators.email,
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Password field
-                AuthTextField(
-                  controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Create a password',
-                  obscureText: _obscurePassword,
-                  prefixIcon: Icons.lock_outlined,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              colorScheme.secondary.withAlpha(15),
+              colorScheme.surface,
+            ],
+            stops: const [0.0, 0.25],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: AppSpacing.paddingAllLg,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  Text(
+                    'Create Account',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
                   ),
-                  validator: Validators.password,
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm password field
-                AuthTextField(
-                  controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hint: 'Confirm your password',
-                  obscureText: _obscureConfirmPassword,
-                  prefixIcon: Icons.lock_outlined,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Start your learning journey',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
-                    onPressed: () {
-                      setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
-                    },
                   ),
-                  validator: (value) => Validators.confirmPassword(
-                    value,
-                    _passwordController.text,
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Full name field
+                  AuthTextField(
+                    controller: _nameController,
+                    label: 'Full Name',
+                    hint: 'Enter your full name',
+                    prefixIcon: Icons.person_outlined,
+                    validator: Validators.name,
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.next,
                   ),
-                  enabled: !isLoading,
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.md),
 
-                // Register button
-                AuthButton(
-                  onPressed: isLoading ? null : _handleRegister,
-                  isLoading: isLoading,
-                  label: 'Create Account',
-                ),
-                const SizedBox(height: 24),
+                  // Email field
+                  AuthTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    hint: 'Enter your email',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: Icons.email_outlined,
+                    validator: Validators.email,
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
 
-                // Login link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Already have an account? ',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                  // Password field
+                  AuthTextField(
+                    controller: _passwordController,
+                    label: 'Password',
+                    hint: 'Create a password',
+                    obscureText: _obscurePassword,
+                    prefixIcon: Icons.lock_outlined,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
                     ),
-                    TextButton(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.go(AppRoutes.login),
-                      child: const Text('Sign In'),
+                    validator: Validators.password,
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Confirm password field
+                  AuthTextField(
+                    controller: _confirmPasswordController,
+                    label: 'Confirm Password',
+                    hint: 'Confirm your password',
+                    obscureText: _obscureConfirmPassword,
+                    prefixIcon: Icons.lock_outlined,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                      },
                     ),
-                  ],
-                ),
-              ],
+                    validator: (value) => Validators.confirmPassword(
+                      value,
+                      _passwordController.text,
+                    ),
+                    enabled: !isLoading,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _handleRegister(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Register button
+                  AuthButton(
+                    onPressed: isLoading ? null : _handleRegister,
+                    isLoading: isLoading,
+                    label: 'Create Account',
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Login link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Already have an account? ',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => context.go(AppRoutes.login),
+                        child: const Text('Sign In'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
