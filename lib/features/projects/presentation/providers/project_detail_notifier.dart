@@ -1,0 +1,104 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../domain/repositories/repositories.dart';
+import 'project_state.dart';
+import 'projects_notifier.dart';
+
+// ============================================================
+// Notifier using ChangeNotifier for family support
+// ============================================================
+
+/// Notifier for managing a single project's state.
+class ProjectDetailChangeNotifier extends ChangeNotifier {
+  final ProjectRepository _repository;
+  final String projectId;
+  
+  ProjectDetailState _state = const ProjectDetailState.initial();
+  ProjectDetailState get state => _state;
+
+  ProjectDetailChangeNotifier({
+    required ProjectRepository repository,
+    required this.projectId,
+  }) : _repository = repository;
+
+  /// Load project details.
+  Future<void> loadProject() async {
+    _state = const ProjectDetailState.loading();
+    notifyListeners();
+
+    try {
+      final project = await _repository.getProject(projectId);
+      _state = ProjectDetailState.loaded(project: project);
+    } catch (e) {
+      _state = ProjectDetailState.error(message: _getErrorMessage(e));
+    }
+    notifyListeners();
+  }
+
+  /// Update project.
+  Future<void> updateProject({
+    String? name,
+    String? description,
+    bool? isArchived,
+  }) async {
+    final currentProject = _state.mapOrNull(
+      loaded: (s) => s.project,
+    );
+
+    if (currentProject == null) return;
+
+    _state = const ProjectDetailState.loading();
+    notifyListeners();
+
+    try {
+      final updatedProject = await _repository.updateProject(
+        projectId: projectId,
+        name: name,
+        description: description,
+        isArchived: isArchived,
+      );
+      _state = ProjectDetailState.loaded(project: updatedProject);
+    } catch (e) {
+      // Restore previous state on error
+      _state = ProjectDetailState.loaded(project: currentProject);
+    }
+    notifyListeners();
+  }
+
+  /// Delete project.
+  Future<bool> deleteProject() async {
+    try {
+      await _repository.deleteProject(projectId);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    if (error is Exception) {
+      final message = error.toString();
+      if (message.startsWith('Exception: ')) {
+        return message.substring(11);
+      }
+      return message;
+    }
+    return 'Failed to load project. Please try again.';
+  }
+}
+
+// ============================================================
+// Provider
+// ============================================================
+
+/// Provider for a specific project's details.
+final projectDetailNotifierProvider = Provider.family.autoDispose<
+    ProjectDetailChangeNotifier, String>(
+  (ref, projectId) {
+    final repository = ref.watch(projectRepositoryProvider);
+    final notifier = ProjectDetailChangeNotifier(repository: repository, projectId: projectId);
+    ref.onDispose(() => notifier.dispose());
+    return notifier;
+  },
+);

@@ -67,6 +67,12 @@ dependencies:
   
   # Shimmer loading effects
   shimmer: ^3.0.0
+  
+  # Path provider for file downloads
+  path_provider: ^2.1.2
+  
+  # Shared preferences for theme persistence
+  shared_preferences: ^2.3.1
 
 dev_dependencies:
   flutter_test:
