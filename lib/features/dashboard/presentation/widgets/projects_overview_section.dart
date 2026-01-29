@@ -1,69 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../projects/presentation/providers/providers.dart';
 
 /// Projects overview section on home tab.
 /// 
 /// Shows a compact view of recent projects.
-/// Currently shows placeholder data - will be connected to API in Feature 2.
-class ProjectsOverviewSection extends StatelessWidget {
+class ProjectsOverviewSection extends ConsumerWidget {
   const ProjectsOverviewSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final projectsState = ref.watch(projectsNotifierProvider);
 
-    // Placeholder data - will be replaced with actual API data
-    final projects = [
-      _ProjectItem(
-        name: 'Math 101',
-        description: 'Calculus and Linear Algebra',
-        documentCount: 5,
-        lastUpdated: 'Updated 1 day ago',
-      ),
-      _ProjectItem(
-        name: 'Physics Fundamentals',
-        description: 'Mechanics and Thermodynamics',
-        documentCount: 3,
-        lastUpdated: 'Updated 3 days ago',
-      ),
-    ];
+    return projectsState.when(
+      initial: () => _buildLoading(context),
+      loading: () => _buildLoading(context),
+      loaded: (projects, isLoadingMore, hasMore) {
+        // Show only the 3 most recent (non-archived)
+        final recentProjects = projects
+            .where((p) => !p.isArchived)
+            .take(3)
+            .toList();
 
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Your Projects',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to projects tab (index 1 in MainShell)
+                    // TODO: Add a way to switch tabs programmatically
+                  },
+                  child: const Text('View All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            if (recentProjects.isEmpty)
+              _buildEmptyState(context)
+            else
+              ...recentProjects.asMap().entries.map((entry) {
+                final index = entry.key;
+                final project = entry.value;
+                return _buildProjectCard(context, project)
+                    .animate()
+                    .fadeIn(delay: (100 * index).ms)
+                    .slideY(begin: 0.05, end: 0);
+              }),
+          ],
+        );
+      },
+      error: (_) => _buildEmptyState(context),
+    );
+  }
+
+  Widget _buildLoading(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Your Projects',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: Navigate to projects tab
-              },
-              child: const Text('View All'),
-            ),
-          ],
+        Text(
+          'Your Projects',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-
-        if (projects.isEmpty)
-          _buildEmptyState(context)
-        else
-          ...projects.asMap().entries.map((entry) {
-            final index = entry.key;
-            final project = entry.value;
-            return _buildProjectCard(context, project)
-                .animate()
-                .fadeIn(delay: (100 * index).ms)
-                .slideY(begin: 0.05, end: 0);
-          }),
+        const Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: CircularProgressIndicator(),
+          ),
+        ),
       ],
     );
   }
@@ -99,7 +122,7 @@ class ProjectsOverviewSection extends StatelessWidget {
     );
   }
 
-  Widget _buildProjectCard(BuildContext context, _ProjectItem project) {
+  Widget _buildProjectCard(BuildContext context, project) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -110,7 +133,7 @@ class ProjectsOverviewSection extends StatelessWidget {
         borderRadius: AppRadius.borderRadiusMd,
         child: InkWell(
           onTap: () {
-            // TODO: Navigate to project detail
+            context.push('${AppRoutes.home}/projects/${project.id}');
           },
           borderRadius: AppRadius.borderRadiusMd,
           child: Container(
@@ -146,31 +169,20 @@ class ProjectsOverviewSection extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        project.description,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                      if (project.description != null && project.description!.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          project.description!,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ],
                       const SizedBox(height: AppSpacing.sm),
                       Row(
                         children: [
-                          Icon(
-                            LucideIcons.fileText,
-                            size: 12,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            '${project.documentCount} documents',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
                           Icon(
                             LucideIcons.clock,
                             size: 12,
@@ -179,7 +191,7 @@ class ProjectsOverviewSection extends StatelessWidget {
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(
-                              project.lastUpdated,
+                              project.lastUpdatedRelative,
                               style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -205,18 +217,4 @@ class ProjectsOverviewSection extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ProjectItem {
-  final String name;
-  final String description;
-  final int documentCount;
-  final String lastUpdated;
-
-  const _ProjectItem({
-    required this.name,
-    required this.description,
-    required this.documentCount,
-    required this.lastUpdated,
-  });
 }

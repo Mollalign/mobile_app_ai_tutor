@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../auth/presentation/providers/providers.dart';
+import '../../../conversations/presentation/providers/providers.dart';
+import '../../../conversations/presentation/widgets/widgets.dart';
+import '../providers/providers.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_conversations_section.dart';
 import '../widgets/projects_overview_section.dart';
@@ -15,9 +20,9 @@ import '../widgets/stats_card.dart';
 /// Shows:
 /// - Welcome header with user name
 /// - Quick action buttons (New Project, Quick Chat)
-/// - Learning stats (placeholder)
-/// - Recent conversations
-/// - Projects overview
+/// - Learning stats (real data)
+/// - Recent conversations (real data)
+/// - Projects overview (real data)
 class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});
 
@@ -26,6 +31,7 @@ class HomeTab extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final stats = ref.watch(dashboardStatsProvider);
 
     final user = authState.whenOrNull(
       authenticated: (user) => user,
@@ -94,12 +100,12 @@ class HomeTab extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xl),
 
                 // Quick Actions
-                _buildQuickActionsSection(context),
+                _buildQuickActionsSection(context, ref),
 
                 const SizedBox(height: AppSpacing.xl),
 
                 // Stats Cards
-                _buildStatsSection(context),
+                _buildStatsSection(context, stats),
 
                 const SizedBox(height: AppSpacing.xl),
 
@@ -200,7 +206,7 @@ class HomeTab extends ConsumerWidget {
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildQuickActionsSection(BuildContext context) {
+  Widget _buildQuickActionsSection(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -223,7 +229,10 @@ class HomeTab extends ConsumerWidget {
                 description: 'Create a study project',
                 color: colorScheme.primary,
                 onTap: () {
-                  // TODO: Navigate to create project
+                  // Navigate to projects tab and show create sheet
+                  // We'll need to trigger the create project action
+                  // For now, just navigate to projects tab
+                  // TODO: Add a way to trigger create project from here
                 },
               ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
             ),
@@ -234,8 +243,24 @@ class HomeTab extends ConsumerWidget {
                 label: 'Quick Chat',
                 description: 'Ask AI anything',
                 color: colorScheme.secondary,
-                onTap: () {
-                  // TODO: Navigate to quick chat
+                onTap: () async {
+                  // Create a quick chat conversation
+                  final config = await NewChatSheet.show(context);
+                  if (config == null || !context.mounted) return;
+
+                  final notifier = ref.read(createConversationNotifierProvider);
+                  final conversation = await notifier.createConversation(
+                    projectId: config.projectId,
+                    isSocratic: config.isSocratic,
+                    initialMessage: config.initialMessage,
+                  );
+
+                  if (conversation != null && context.mounted) {
+                    // Add to conversations list
+                    ref.read(conversationsNotifierProvider).addConversation(conversation);
+                    // Navigate to chat
+                    context.push('${AppRoutes.conversations}/${conversation.id}');
+                  }
                 },
               ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0),
             ),
@@ -245,7 +270,7 @@ class HomeTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsSection(BuildContext context) {
+  Widget _buildStatsSection(BuildContext context, DashboardStats stats) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -276,7 +301,7 @@ class HomeTab extends ConsumerWidget {
               child: StatsCard(
                 icon: LucideIcons.flame,
                 label: 'Day Streak',
-                value: '7',
+                value: stats.dayStreak > 0 ? '${stats.dayStreak}' : '0',
                 color: colorScheme.tertiary,
               ).animate().fadeIn(delay: 150.ms).scale(begin: const Offset(0.9, 0.9)),
             ),
@@ -285,7 +310,7 @@ class HomeTab extends ConsumerWidget {
               child: StatsCard(
                 icon: LucideIcons.messageSquare,
                 label: 'Chats',
-                value: '24',
+                value: '${stats.totalConversations}',
                 color: colorScheme.secondary,
               ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
             ),
@@ -294,7 +319,7 @@ class HomeTab extends ConsumerWidget {
               child: StatsCard(
                 icon: LucideIcons.fileText,
                 label: 'Documents',
-                value: '12',
+                value: '${stats.totalDocuments}',
                 color: colorScheme.primary,
               ).animate().fadeIn(delay: 250.ms).scale(begin: const Offset(0.9, 0.9)),
             ),

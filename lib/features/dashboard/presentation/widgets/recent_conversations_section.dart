@@ -1,71 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../conversations/presentation/providers/providers.dart';
 
 /// Recent conversations section on home tab.
 /// 
 /// Shows the most recent conversations with a "View All" link.
-/// Currently shows placeholder data - will be connected to API in Feature 4.
-class RecentConversationsSection extends StatelessWidget {
+class RecentConversationsSection extends ConsumerWidget {
   const RecentConversationsSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final conversationsNotifier = ref.watch(conversationsNotifierProvider);
 
-    // Placeholder data - will be replaced with actual API data
-    final conversations = [
-      _ConversationItem(
-        title: 'Understanding Calculus Derivatives',
-        projectName: 'Math 101',
-        lastMessage: 'The power rule states that...',
-        timeAgo: '2 hours ago',
-        isQuickChat: false,
-      ),
-      _ConversationItem(
-        title: 'Quick Question',
-        projectName: null,
-        lastMessage: 'What is the difference between...',
-        timeAgo: '5 hours ago',
-        isQuickChat: true,
-      ),
-    ];
+    return conversationsNotifier.state.when(
+      initial: () => _buildLoading(context),
+      loading: () => _buildLoading(context),
+      loaded: (conversations, total, isLoadingMore, hasMore) {
+        // Show only the 3 most recent
+        final recentConversations = conversations.take(3).toList();
 
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Conversations',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to chat tab (index 2 in MainShell)
+                    // We can't directly change tab index, so navigate to chat route
+                    // For now, just show a message or navigate to conversations list
+                    // TODO: Add a way to switch tabs programmatically
+                  },
+                  child: const Text('View All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            
+            if (recentConversations.isEmpty)
+              _buildEmptyState(context)
+            else
+              ...recentConversations.asMap().entries.map((entry) {
+                final index = entry.key;
+                final conversation = entry.value;
+                return _buildConversationTile(context, conversation)
+                    .animate()
+                    .fadeIn(delay: (100 * index).ms)
+                    .slideX(begin: 0.05, end: 0);
+              }),
+          ],
+        );
+      },
+      error: (_) => _buildEmptyState(context),
+    );
+  }
+
+  Widget _buildLoading(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Recent Conversations',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: Navigate to chat tab
-              },
-              child: const Text('View All'),
-            ),
-          ],
+        Text(
+          'Recent Conversations',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        
-        if (conversations.isEmpty)
-          _buildEmptyState(context)
-        else
-          ...conversations.asMap().entries.map((entry) {
-            final index = entry.key;
-            final conversation = entry.value;
-            return _buildConversationTile(context, conversation)
-                .animate()
-                .fadeIn(delay: (100 * index).ms)
-                .slideX(begin: 0.05, end: 0);
-          }),
+        const Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: CircularProgressIndicator(),
+          ),
+        ),
       ],
     );
   }
@@ -101,7 +121,7 @@ class RecentConversationsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildConversationTile(BuildContext context, _ConversationItem item) {
+  Widget _buildConversationTile(BuildContext context, conversation) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -112,7 +132,7 @@ class RecentConversationsSection extends StatelessWidget {
         borderRadius: AppRadius.borderRadiusMd,
         child: InkWell(
           onTap: () {
-            // TODO: Navigate to conversation
+            context.push('${AppRoutes.conversations}/${conversation.id}');
           },
           borderRadius: AppRadius.borderRadiusMd,
           child: Container(
@@ -127,17 +147,17 @@ class RecentConversationsSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: item.isQuickChat
+                    color: conversation.isQuickChat
                         ? colorScheme.secondaryContainer
                         : colorScheme.primaryContainer,
                     borderRadius: AppRadius.borderRadiusSm,
                   ),
                   child: Icon(
-                    item.isQuickChat
+                    conversation.isQuickChat
                         ? LucideIcons.sparkles
                         : LucideIcons.messageSquare,
                     size: 18,
-                    color: item.isQuickChat
+                    color: conversation.isQuickChat
                         ? colorScheme.secondary
                         : colorScheme.primary,
                   ),
@@ -152,7 +172,7 @@ class RecentConversationsSection extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              item.title,
+                              conversation.displayTitle,
                               style: textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -161,7 +181,7 @@ class RecentConversationsSection extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            item.timeAgo,
+                            conversation.lastActivityRelative,
                             style: textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -169,7 +189,7 @@ class RecentConversationsSection extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      if (item.projectName != null) ...[
+                      if (conversation.projectName != null) ...[
                         Row(
                           children: [
                             Icon(
@@ -179,7 +199,7 @@ class RecentConversationsSection extends StatelessWidget {
                             ),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
-                              item.projectName!,
+                              conversation.projectName!,
                               style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.primary,
                               ),
@@ -189,7 +209,9 @@ class RecentConversationsSection extends StatelessWidget {
                         const SizedBox(height: AppSpacing.xs),
                       ],
                       Text(
-                        item.lastMessage,
+                        conversation.messageCount > 0
+                            ? '${conversation.messageCount} message${conversation.messageCount == 1 ? '' : 's'}'
+                            : 'No messages yet',
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -212,20 +234,4 @@ class RecentConversationsSection extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ConversationItem {
-  final String title;
-  final String? projectName;
-  final String lastMessage;
-  final String timeAgo;
-  final bool isQuickChat;
-
-  const _ConversationItem({
-    required this.title,
-    required this.projectName,
-    required this.lastMessage,
-    required this.timeAgo,
-    required this.isQuickChat,
-  });
 }
