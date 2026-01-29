@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../projects/presentation/providers/providers.dart';
 
@@ -133,7 +132,7 @@ class ProjectsOverviewSection extends ConsumerWidget {
         borderRadius: AppRadius.borderRadiusMd,
         child: InkWell(
           onTap: () {
-            context.push('${AppRoutes.home}/projects/${project.id}');
+            context.push('/projects/${project.id}');
           },
           borderRadius: AppRadius.borderRadiusMd,
           child: Container(

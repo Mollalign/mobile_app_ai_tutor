@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,15 +12,58 @@ import '../../../conversations/presentation/providers/providers.dart';
 /// Recent conversations section on home tab.
 /// 
 /// Shows the most recent conversations with a "View All" link.
-class RecentConversationsSection extends ConsumerWidget {
+class RecentConversationsSection extends ConsumerStatefulWidget {
   const RecentConversationsSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecentConversationsSection> createState() => _RecentConversationsSectionState();
+}
+
+class _RecentConversationsSectionState extends ConsumerState<RecentConversationsSection> {
+  ConversationsChangeNotifier? _notifier;
+  bool _hasLoaded = false;
+
+  @override
+  void dispose() {
+    _notifier?.removeListener(_onNotifierChanged);
+    super.dispose();
+  }
+
+  void _onNotifierChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final conversationsNotifier = ref.watch(conversationsNotifierProvider);
+    
+    // Set up listener for ChangeNotifier updates
+    if (_notifier != conversationsNotifier) {
+      _notifier?.removeListener(_onNotifierChanged);
+      _notifier = conversationsNotifier;
+      _notifier?.addListener(_onNotifierChanged);
+    }
+    
+    final state = conversationsNotifier.state;
+    
+    // Load conversations if in initial state
+    if (!_hasLoaded) {
+      _hasLoaded = true;
+      state.whenOrNull(
+        initial: () {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              conversationsNotifier.loadConversations();
+            }
+          });
+        },
+      );
+    }
 
-    return conversationsNotifier.state.when(
+    return state.when(
       initial: () => _buildLoading(context),
       loading: () => _buildLoading(context),
       loaded: (conversations, total, isLoadingMore, hasMore) {
@@ -180,10 +224,14 @@ class RecentConversationsSection extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Text(
-                            conversation.lastActivityRelative,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                          const SizedBox(width: AppSpacing.xs),
+                          Flexible(
+                            child: Text(
+                              conversation.lastActivityRelative,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -198,25 +246,31 @@ class RecentConversationsSection extends ConsumerWidget {
                               color: colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              conversation.projectName!,
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.primary,
+                            Expanded(
+                              child: Text(
+                                conversation.projectName!,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.primary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: AppSpacing.xs),
                       ],
-                      Text(
-                        conversation.messageCount > 0
-                            ? '${conversation.messageCount} message${conversation.messageCount == 1 ? '' : 's'}'
-                            : 'No messages yet',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                      Flexible(
+                        child: Text(
+                          conversation.messageCount > 0
+                              ? '${conversation.messageCount} message${conversation.messageCount == 1 ? '' : 's'}'
+                              : 'No messages yet',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

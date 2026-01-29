@@ -73,10 +73,13 @@ class ConversationCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          conversation.lastActivityRelative,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                        Flexible(
+                          child: Text(
+                            conversation.lastActivityRelative,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -87,24 +90,27 @@ class ConversationCard extends StatelessWidget {
                     Row(
                       children: [
                         // Chat type badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: conversation.isProjectChat
-                                ? colorScheme.primaryContainer.withAlpha(128)
-                                : colorScheme.secondaryContainer.withAlpha(128),
-                            borderRadius: AppRadius.borderRadiusXs,
-                          ),
-                          child: Text(
-                            conversation.chatType.displayName,
-                            style: textTheme.labelSmall?.copyWith(
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
                               color: conversation.isProjectChat
-                                  ? colorScheme.primary
-                                  : colorScheme.secondary,
-                              fontWeight: FontWeight.w500,
+                                  ? colorScheme.primaryContainer.withAlpha(128)
+                                  : colorScheme.secondaryContainer.withAlpha(128),
+                              borderRadius: AppRadius.borderRadiusXs,
+                            ),
+                            child: Text(
+                              conversation.chatType.displayName,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: conversation.isProjectChat
+                                    ? colorScheme.primary
+                                    : colorScheme.secondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -118,10 +124,13 @@ class ConversationCard extends StatelessWidget {
                             color: colorScheme.tertiary,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            'Socratic',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.tertiary,
+                          Flexible(
+                            child: Text(
+                              'Socratic',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.tertiary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
@@ -134,10 +143,13 @@ class ConversationCard extends StatelessWidget {
                           color: colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '${conversation.messageCount}',
-                          style: textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                        Flexible(
+                          child: Text(
+                            '${conversation.messageCount}',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -237,17 +249,24 @@ class ConversationListTile extends StatelessWidget {
         ),
       ),
       subtitle: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            conversation.chatType.displayName,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.primary,
+          Flexible(
+            child: Text(
+              conversation.chatType.displayName,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.primary,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            ' • ${conversation.messageCount} messages',
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+          Flexible(
+            child: Text(
+              ' • ${conversation.messageCount} messages',
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

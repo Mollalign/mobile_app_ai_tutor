@@ -164,8 +164,8 @@ class ApiConstants {
   // Timeouts (in milliseconds)
   // ============================================================
   
-  static const int connectionTimeout = 30000; // 30 seconds
-  static const int receiveTimeout = 30000;    // 30 seconds
+  static const int connectionTimeout = 60000; // 60 seconds
+  static const int receiveTimeout = 60000;    // 60 seconds
   
   // Longer timeout for file uploads
   static const int uploadTimeout = 120000;    // 2 minutes

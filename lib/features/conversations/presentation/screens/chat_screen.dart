@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,11 +25,19 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
+  ChatChangeNotifier? _notifier;
 
   @override
   void dispose() {
+    _notifier?.removeListener(_onNotifierChanged);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onNotifierChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _scrollToBottom() {
@@ -47,6 +56,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final chatNotifier = ref.watch(chatNotifierProvider(widget.conversationId));
     final chatState = chatNotifier.state;
+    
+    // Load chat if in initial state
+    chatState.whenOrNull(
+      initial: () {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            chatNotifier.loadChat();
+          }
+        });
+      },
+    );
 
     // Scroll to bottom when messages change
     ref.listen<ChatChangeNotifier>(

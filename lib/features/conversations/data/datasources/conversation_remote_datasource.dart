@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
@@ -44,20 +45,36 @@ class ConversationRemoteDataSource {
     int skip = 0,
     int limit = 50,
   }) async {
-    final queryParams = <String, dynamic>{
-      'skip': skip,
-      'limit': limit,
-    };
-    if (projectId != null) {
-      queryParams['project_id'] = projectId;
+    try {
+      debugPrint('getConversations: projectId=$projectId, skip=$skip, limit=$limit');
+      
+      final queryParams = <String, dynamic>{
+        'skip': skip,
+        'limit': limit,
+      };
+      if (projectId != null) {
+        queryParams['project_id'] = projectId;
+      }
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiConstants.conversations,
+        queryParameters: queryParams,
+      );
+
+      if (response.data == null) {
+        debugPrint('getConversations: response.data is null');
+        return const ConversationListModel(conversations: [], total: 0);
+      }
+
+      debugPrint('getConversations: received response, parsing...');
+      final result = ConversationListModel.fromJson(response.data!);
+      debugPrint('getConversations: parsed ${result.conversations.length} conversations');
+      return result;
+    } catch (e, stackTrace) {
+      debugPrint('Error in getConversations: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
     }
-
-    final response = await _apiClient.get<Map<String, dynamic>>(
-      ApiConstants.conversations,
-      queryParameters: queryParams,
-    );
-
-    return ConversationListModel.fromJson(response.data!);
   }
 
   /// Get conversation with messages.

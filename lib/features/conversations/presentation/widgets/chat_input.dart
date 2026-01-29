@@ -112,15 +112,18 @@ class _ChatInputState extends State<ChatInput> {
                             : colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        widget.isSocratic
-                            ? 'Socratic Mode On'
-                            : 'Direct Answers',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: widget.isSocratic
-                              ? colorScheme.tertiary
-                              : colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
+                      Flexible(
+                        child: Text(
+                          widget.isSocratic
+                              ? 'Socratic Mode On'
+                              : 'Direct Answers',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: widget.isSocratic
+                                ? colorScheme.tertiary
+                                : colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 4),

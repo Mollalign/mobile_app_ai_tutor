@@ -320,7 +320,9 @@ class ProfileTab extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             ...ThemeMode.values.map((mode) => RadioListTile<ThemeMode>(
               value: mode,
+              // ignore: deprecated_member_use
               groupValue: currentMode,
+              // ignore: deprecated_member_use
               onChanged: (value) {
                 if (value != null) {
                   ref.read(themeModeProvider.notifier).setThemeMode(value);

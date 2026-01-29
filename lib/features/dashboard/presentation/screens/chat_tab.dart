@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,11 +27,20 @@ class ChatTab extends ConsumerStatefulWidget {
 class _ChatTabState extends ConsumerState<ChatTab> {
   final _searchController = TextEditingController();
   bool _isSearching = false;
+  bool _hasLoaded = false;
+  ConversationsChangeNotifier? _notifier;
 
   @override
   void dispose() {
+    _notifier?.removeListener(_onNotifierChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onNotifierChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _createNewChat() async {
@@ -58,6 +68,29 @@ class _ChatTabState extends ConsumerState<ChatTab> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final conversationsNotifier = ref.watch(conversationsNotifierProvider);
+    
+    // Set up listener for ChangeNotifier updates
+    if (_notifier != conversationsNotifier) {
+      _notifier?.removeListener(_onNotifierChanged);
+      _notifier = conversationsNotifier;
+      _notifier?.addListener(_onNotifierChanged);
+    }
+    
+    final state = conversationsNotifier.state;
+    
+    // Load conversations on first build if in initial state
+    if (!_hasLoaded) {
+      _hasLoaded = true;
+      state.whenOrNull(
+        initial: () {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              conversationsNotifier.loadConversations();
+            }
+          });
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -94,7 +127,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
-      body: conversationsNotifier.state.when(
+      body: state.when(
         initial: () => const _LoadingState(),
         loading: () => const _LoadingState(),
         loaded: (conversations, total, isLoadingMore, hasMore) {
@@ -106,16 +139,13 @@ class _ChatTabState extends ConsumerState<ChatTab> {
             isLoadingMore: isLoadingMore,
             hasMore: hasMore,
             searchQuery: _searchController.text,
-            onLoadMore: () =>
-                ref.read(conversationsNotifierProvider).loadMore(),
-            onRefresh: () =>
-                ref.read(conversationsNotifierProvider).loadConversations(refresh: true),
+            onLoadMore: () => conversationsNotifier.loadMore(),
+            onRefresh: () => conversationsNotifier.loadConversations(refresh: true),
           );
         },
         error: (message) => _ErrorState(
           message: message,
-          onRetry: () =>
-              ref.read(conversationsNotifierProvider).loadConversations(refresh: true),
+          onRetry: () => conversationsNotifier.loadConversations(refresh: true),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

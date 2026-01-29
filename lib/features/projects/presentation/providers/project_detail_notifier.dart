@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,12 +30,25 @@ class ProjectDetailChangeNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final project = await _repository.getProject(projectId);
+      debugPrint('Loading project: projectId=$projectId');
+      
+      final project = await _repository.getProject(projectId).timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          throw TimeoutException('Request timed out after 60 seconds');
+        },
+      );
+      
+      debugPrint('Loaded project: ${project.name}');
+      
       _state = ProjectDetailState.loaded(project: project);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error loading project: $e');
+      debugPrint('Stack trace: $stackTrace');
       _state = ProjectDetailState.error(message: _getErrorMessage(e));
+    } finally {
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   /// Update project.
@@ -102,3 +117,4 @@ final projectDetailNotifierProvider = Provider.family.autoDispose<
     return notifier;
   },
 );
+

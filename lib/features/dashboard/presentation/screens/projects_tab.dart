@@ -278,7 +278,10 @@ class _ProjectsGridView extends ConsumerWidget {
           final project = projects[index];
           return ProjectGridCard(
             project: project,
-            onTap: () => context.push('/projects/${project.id}'),
+            onTap: () {
+              debugPrint('Navigating to project: ${project.id}');
+              context.push('/projects/${project.id}');
+            },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
           ).animate().fadeIn(delay: (50 * index).ms).scale(
                 begin: const Offset(0.95, 0.95),
@@ -331,7 +334,10 @@ class _ProjectsListView extends ConsumerWidget {
           final project = projects[index];
           return ProjectListTile(
             project: project,
-            onTap: () => context.push('/projects/${project.id}'),
+            onTap: () {
+              debugPrint('Navigating to project: ${project.id}');
+              context.push('/projects/${project.id}');
+            },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
           ).animate().fadeIn(delay: (50 * index).ms).slideX(
                 begin: 0.05,

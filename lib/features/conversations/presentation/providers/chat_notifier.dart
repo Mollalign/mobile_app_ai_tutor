@@ -46,9 +46,7 @@ class ChatChangeNotifier extends ChangeNotifier {
     required ConversationRepository repository,
     required String conversationId,
   })  : _repository = repository,
-        _conversationId = conversationId {
-    loadChat();
-  }
+        _conversationId = conversationId;
 
   @override
   void dispose() {
@@ -62,16 +60,28 @@ class ChatChangeNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final conversation = await _repository.getConversation(_conversationId);
+      debugPrint('Loading chat: conversationId=$_conversationId');
+      
+      final conversation = await _repository.getConversation(_conversationId).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Request timed out after 30 seconds');
+        },
+      );
+      
+      debugPrint('Loaded chat with ${conversation.messages.length} messages');
+      
       _state = ChatState.loaded(
         conversation: conversation,
         messages: conversation.messages,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error loading chat: $e');
+      debugPrint('Stack trace: $stackTrace');
       _state = ChatState.error(message: _getErrorMessage(e));
+    } finally {
+      notifyListeners();
     }
-
-    notifyListeners();
   }
 
   /// Send a message (non-streaming).

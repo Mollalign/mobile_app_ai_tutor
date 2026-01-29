@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,6 +20,7 @@ final conversationsNotifierProvider =
   ref.onDispose(() => notifier.dispose());
   return notifier;
 });
+
 
 /// Provider for project-specific conversations.
 final projectConversationsNotifierProvider =
@@ -52,9 +55,7 @@ class ConversationsChangeNotifier extends ChangeNotifier {
     required ConversationRepository repository,
     String? projectId,
   })  : _repository = repository,
-        _projectId = projectId {
-    loadConversations();
-  }
+        _projectId = projectId;
 
   /// Load conversations (initial load or refresh).
   Future<void> loadConversations({bool refresh = false}) async {
@@ -68,11 +69,20 @@ class ConversationsChangeNotifier extends ChangeNotifier {
     }
 
     try {
+      debugPrint('Loading conversations: projectId=$_projectId, skip=${_currentPage * _pageSize}, limit=$_pageSize');
+      
       final conversations = await _repository.getConversations(
         projectId: _projectId,
         skip: _currentPage * _pageSize,
         limit: _pageSize,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Request timed out after 30 seconds');
+        },
       );
+
+      debugPrint('Loaded ${conversations.length} conversations');
 
       List<Conversation> updatedList;
       if (refresh || _currentPage == 0) {
@@ -94,11 +104,16 @@ class ConversationsChangeNotifier extends ChangeNotifier {
         hasMore: conversations.length >= _pageSize,
         isLoadingMore: false,
       );
-    } catch (e) {
+      
+      debugPrint('State updated to loaded with ${updatedList.length} conversations');
+    } catch (e, stackTrace) {
+      // Log error for debugging
+      debugPrint('Error loading conversations: $e');
+      debugPrint('Stack trace: $stackTrace');
       _state = ConversationsState.error(message: _getErrorMessage(e));
+    } finally {
+      notifyListeners();
     }
-
-    notifyListeners();
   }
 
   /// Load more conversations.

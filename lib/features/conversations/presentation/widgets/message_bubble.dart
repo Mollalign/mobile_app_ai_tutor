@@ -92,11 +92,15 @@ class _UserBubble extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4, right: 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    message.createdRelative,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                  Flexible(
+                    child: Text(
+                      message.createdRelative,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (message.isPending) ...[
@@ -168,11 +172,14 @@ class _AssistantBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'AI Tutor',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.tertiary,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    'AI Tutor',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.tertiary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -228,10 +235,13 @@ class _AssistantBubble extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    message.createdRelative,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                  Flexible(
+                    child: Text(
+                      message.createdRelative,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (!message.isStreaming) ...[
@@ -253,6 +263,7 @@ class _AssistantBubble extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               LucideIcons.copy,
@@ -383,11 +394,14 @@ class _SourcesList extends StatelessWidget {
               color: colorScheme.primary,
             ),
             const SizedBox(width: 4),
-            Text(
-              'Sources',
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                'Sources',
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -421,10 +435,13 @@ class _SourcesList extends StatelessWidget {
                       color: colorScheme.primary,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      source.displayText,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary,
+                    Flexible(
+                      child: Text(
+                        source.displayText,
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

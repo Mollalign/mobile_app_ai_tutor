@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -31,28 +32,52 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
 class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  ProjectDetailChangeNotifier? _notifier;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Load project details
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(projectDetailNotifierProvider(widget.projectId)).loadProject();
-    });
   }
 
   @override
   void dispose() {
+    _notifier?.removeListener(_onNotifierChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _onNotifierChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final projectNotifier = ref.watch(projectDetailNotifierProvider(widget.projectId));
+    
+    // Set up listener for ChangeNotifier updates
+    if (_notifier != projectNotifier) {
+      _notifier?.removeListener(_onNotifierChanged);
+      _notifier = projectNotifier;
+      _notifier?.addListener(_onNotifierChanged);
+    }
+    
+    final state = projectNotifier.state;
+    
+    // Load project if in initial state
+    state.whenOrNull(
+      initial: () {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            projectNotifier.loadProject();
+          }
+        });
+      },
+    );
 
-    return projectNotifier.state.when(
+    return state.when(
       initial: () => _buildLoadingScaffold(context),
       loading: () => _buildLoadingScaffold(context),
       loaded: (project) => _buildLoadedScaffold(context, project),
@@ -106,9 +131,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
               const SizedBox(height: AppSpacing.xl),
               FilledButton.icon(
                 onPressed: () {
-                  ref
-                      .read(projectDetailNotifierProvider(widget.projectId))
-                      .loadProject();
+                  ref.read(projectDetailNotifierProvider(widget.projectId)).loadProject();
                 },
                 icon: const Icon(LucideIcons.refreshCw),
                 label: const Text('Try Again'),

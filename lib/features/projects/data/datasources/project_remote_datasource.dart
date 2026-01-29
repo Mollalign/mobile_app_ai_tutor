@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../../core/network/network.dart';
 import '../models/models.dart';
 
@@ -32,24 +34,46 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
 
   @override
   Future<List<ProjectModel>> getProjects({int skip = 0, int limit = 20}) async {
-    final response = await _apiClient.get(
-      '/projects',
-      queryParameters: {
-        'skip': skip,
-        'limit': limit,
-      },
-    );
+    try {
+      final response = await _apiClient.get<List<dynamic>>(
+        '/projects',
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+        },
+      );
 
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data
-        .map((json) => ProjectModel.fromJson(json as Map<String, dynamic>))
-        .toList();
+      if (response.data == null) {
+        return [];
+      }
+
+      return response.data!
+          .map((json) => ProjectModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e, stackTrace) {
+      debugPrint('Error in getProjects: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   @override
   Future<ProjectModel> getProject(String projectId) async {
-    final response = await _apiClient.get('/projects/$projectId');
-    return ProjectModel.fromJson(response.data as Map<String, dynamic>);
+    try {
+      debugPrint('getProject: fetching projectId=$projectId');
+      final response = await _apiClient.get<Map<String, dynamic>>('/projects/$projectId');
+      
+      if (response.data == null) {
+        throw Exception('Project not found: $projectId');
+      }
+      
+      debugPrint('getProject: received response for projectId=$projectId');
+      return ProjectModel.fromJson(response.data!);
+    } catch (e, stackTrace) {
+      debugPrint('Error in getProject: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   @override
