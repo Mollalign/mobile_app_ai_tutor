@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../constants/constants.dart';
 import '../errors/errors.dart';
+import '../storage/storage.dart';
 import './interceptors/auth_interceptor.dart';
 import 'package:flutter/foundation.dart';
 
@@ -66,6 +67,11 @@ class ApiClient {
   /// Set the logout callback (can be updated after init).
   set onLogout(void Function()? callback) {
     _authInterceptor.onLogout = callback;
+  }
+
+  /// Get the current auth token for use outside of Dio (e.g., SSE streams).
+  Future<String?> getAuthToken() async {
+    return await SecureStorage().getAccessToken();
   }
 
   void _ensureInitialized() {

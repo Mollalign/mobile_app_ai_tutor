@@ -42,6 +42,9 @@ class AppSpacing {
 class AppRadius {
   AppRadius._();
 
+  /// Extra small radius - 4px
+  static const double xs = 4;
+
   /// Small radius - 8px
   static const double sm = 8;
 
@@ -58,6 +61,7 @@ class AppRadius {
   static const double full = 9999;
 
   // BorderRadius shortcuts
+  static BorderRadius get borderRadiusXs => BorderRadius.circular(xs);
   static BorderRadius get borderRadiusSm => BorderRadius.circular(sm);
   static BorderRadius get borderRadiusMd => BorderRadius.circular(md);
   static BorderRadius get borderRadiusLg => BorderRadius.circular(lg);

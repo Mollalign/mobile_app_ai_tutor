@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/providers/providers.dart';
 import '../features/auth/presentation/screens/screens.dart';
+import '../features/conversations/presentation/screens/screens.dart';
 import '../features/dashboard/presentation/screens/screens.dart';
 import '../features/projects/presentation/screens/screens.dart';
 
@@ -21,9 +22,8 @@ class AppRoutes {
   // Main app routes
   static const String home = '/home';
   static const String projectDetail = '/projects/:id';
-  
-  // Future routes (will be added as features are built)
-  // static const String conversation = '/conversations/:id';
+  static const String conversations = '/conversations';
+  static const String chat = '/conversations/:id';
 }
 
 /// Router provider.
@@ -120,6 +120,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final projectId = state.pathParameters['id']!;
           return ProjectDetailScreen(projectId: projectId);
+        },
+      ),
+      
+      // ============================================
+      // Conversation Routes
+      // ============================================
+      GoRoute(
+        path: AppRoutes.chat,
+        builder: (context, state) {
+          final conversationId = state.pathParameters['id']!;
+          return ChatScreen(conversationId: conversationId);
         },
       ),
     ],
