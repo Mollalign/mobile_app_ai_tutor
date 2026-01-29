@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/repositories.dart';
@@ -20,7 +21,6 @@ final conversationsNotifierProvider =
   ref.onDispose(() => notifier.dispose());
   return notifier;
 });
-
 
 /// Provider for project-specific conversations.
 final projectConversationsNotifierProvider =
@@ -44,6 +44,7 @@ final projectConversationsNotifierProvider =
 class ConversationsChangeNotifier extends ChangeNotifier {
   final ConversationRepository _repository;
   final String? _projectId;
+  bool _disposed = false;
 
   ConversationsState _state = const ConversationsState.initial();
   ConversationsState get state => _state;
@@ -56,6 +57,32 @@ class ConversationsChangeNotifier extends ChangeNotifier {
     String? projectId,
   })  : _repository = repository,
         _projectId = projectId;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer = phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+
+    if (shouldDefer) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) {
+          super.notifyListeners();
+        }
+      });
+      return;
+    }
+
+    super.notifyListeners();
+  }
 
   /// Load conversations (initial load or refresh).
   Future<void> loadConversations({bool refresh = false}) async {

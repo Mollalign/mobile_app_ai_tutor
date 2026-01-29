@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/datasources.dart';
@@ -28,6 +29,7 @@ final chatNotifierProvider =
   },
 );
 
+
 // ============================================================
 // Chat Notifier
 // ============================================================
@@ -36,6 +38,7 @@ final chatNotifierProvider =
 class ChatChangeNotifier extends ChangeNotifier {
   final ConversationRepository _repository;
   final String _conversationId;
+  bool _disposed = false;
 
   ChatState _state = const ChatState.initial();
   ChatState get state => _state;
@@ -50,8 +53,29 @@ class ChatChangeNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _streamSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer = phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+
+    if (shouldDefer) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) {
+          super.notifyListeners();
+        }
+      });
+      return;
+    }
+
+    super.notifyListeners();
   }
 
   /// Load the conversation with messages.

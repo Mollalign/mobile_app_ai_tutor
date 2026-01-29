@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
@@ -21,12 +20,14 @@ class ProjectActionsSheet extends ConsumerWidget {
       context: context,
       builder: (context) => ProjectActionsSheet(project: project),
       showDragHandle: true,
+      isScrollControlled: true,
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final container = ProviderScope.containerOf(context, listen: false);
 
     return SafeArea(
       child: Padding(
@@ -55,7 +56,7 @@ class ProjectActionsSheet extends ConsumerWidget {
               label: 'Edit Project',
               onTap: () {
                 Navigator.of(context).pop();
-                _showEditDialog(context, ref);
+                _showEditDialog(context, container);
               },
             ),
             _ActionTile(
@@ -63,7 +64,7 @@ class ProjectActionsSheet extends ConsumerWidget {
               label: project.isArchived ? 'Unarchive Project' : 'Archive Project',
               onTap: () {
                 Navigator.of(context).pop();
-                _toggleArchive(context, ref);
+                _toggleArchive(context, container);
               },
             ),
             _ActionTile(
@@ -72,7 +73,7 @@ class ProjectActionsSheet extends ConsumerWidget {
               isDestructive: true,
               onTap: () {
                 Navigator.of(context).pop();
-                _confirmDelete(context, ref);
+                _confirmDelete(context, container);
               },
             ),
           ],
@@ -81,7 +82,7 @@ class ProjectActionsSheet extends ConsumerWidget {
     );
   }
 
-  void _showEditDialog(BuildContext context, WidgetRef ref) {
+  void _showEditDialog(BuildContext context, ProviderContainer container) {
     final nameController = TextEditingController(text: project.name);
     final descriptionController = TextEditingController(text: project.description ?? '');
     final formKey = GlobalKey<FormState>();
@@ -89,6 +90,7 @@ class ProjectActionsSheet extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: const Text('Edit Project'),
         content: Form(
           key: formKey,
@@ -129,7 +131,7 @@ class ProjectActionsSheet extends ConsumerWidget {
             onPressed: () async {
               if (formKey.currentState!.validate()) {
                 Navigator.of(context).pop();
-                await ref
+                await container
                     .read(projectDetailNotifierProvider(project.id))
                     .updateProject(
                       name: nameController.text,
@@ -138,7 +140,7 @@ class ProjectActionsSheet extends ConsumerWidget {
                           : descriptionController.text,
                     );
                 // Refresh projects list
-                ref.invalidate(projectsNotifierProvider);
+                container.invalidate(projectsNotifierProvider);
               }
             },
             child: const Text('Save'),
@@ -148,12 +150,12 @@ class ProjectActionsSheet extends ConsumerWidget {
     );
   }
 
-  void _toggleArchive(BuildContext context, WidgetRef ref) async {
-    await ref
+  void _toggleArchive(BuildContext context, ProviderContainer container) async {
+    await container
         .read(projectDetailNotifierProvider(project.id))
         .updateProject(isArchived: !project.isArchived);
     // Refresh projects list
-    ref.invalidate(projectsNotifierProvider);
+    container.invalidate(projectsNotifierProvider);
     
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,12 +171,13 @@ class ProjectActionsSheet extends ConsumerWidget {
     }
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context, ProviderContainer container) {
     final colorScheme = Theme.of(context).colorScheme;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         icon: Icon(
           LucideIcons.alertTriangle,
           color: colorScheme.error,
@@ -191,14 +194,11 @@ class ProjectActionsSheet extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await ref
+              await container
                   .read(projectDetailNotifierProvider(project.id))
                   .deleteProject();
               // Refresh projects list and navigate back
-              ref.invalidate(projectsNotifierProvider);
-              if (context.mounted) {
-                context.pop();
-              }
+              container.invalidate(projectsNotifierProvider);
             },
             style: FilledButton.styleFrom(
               backgroundColor: colorScheme.error,

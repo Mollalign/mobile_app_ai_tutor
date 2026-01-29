@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/repositories.dart';
@@ -15,6 +16,7 @@ import 'projects_notifier.dart';
 class ProjectDetailChangeNotifier extends ChangeNotifier {
   final ProjectRepository _repository;
   final String projectId;
+  bool _disposed = false;
   
   ProjectDetailState _state = const ProjectDetailState.initial();
   ProjectDetailState get state => _state;
@@ -23,6 +25,32 @@ class ProjectDetailChangeNotifier extends ChangeNotifier {
     required ProjectRepository repository,
     required this.projectId,
   }) : _repository = repository;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer = phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+
+    if (shouldDefer) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) {
+          super.notifyListeners();
+        }
+      });
+      return;
+    }
+
+    super.notifyListeners();
+  }
 
   /// Load project details.
   Future<void> loadProject() async {
@@ -108,13 +136,15 @@ class ProjectDetailChangeNotifier extends ChangeNotifier {
 // ============================================================
 
 /// Provider for a specific project's details.
-final projectDetailNotifierProvider = Provider.family.autoDispose<
-    ProjectDetailChangeNotifier, String>(
+final projectDetailNotifierProvider =
+    Provider.family.autoDispose<ProjectDetailChangeNotifier, String>(
   (ref, projectId) {
     final repository = ref.watch(projectRepositoryProvider);
-    final notifier = ProjectDetailChangeNotifier(repository: repository, projectId: projectId);
+    final notifier = ProjectDetailChangeNotifier(
+      repository: repository,
+      projectId: projectId,
+    );
     ref.onDispose(() => notifier.dispose());
     return notifier;
   },
 );
-

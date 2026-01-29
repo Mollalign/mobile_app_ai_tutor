@@ -28,19 +28,11 @@ class _ChatTabState extends ConsumerState<ChatTab> {
   final _searchController = TextEditingController();
   bool _isSearching = false;
   bool _hasLoaded = false;
-  ConversationsChangeNotifier? _notifier;
 
   @override
   void dispose() {
-    _notifier?.removeListener(_onNotifierChanged);
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onNotifierChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   Future<void> _createNewChat() async {
@@ -68,31 +60,27 @@ class _ChatTabState extends ConsumerState<ChatTab> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final conversationsNotifier = ref.watch(conversationsNotifierProvider);
-    
-    // Set up listener for ChangeNotifier updates
-    if (_notifier != conversationsNotifier) {
-      _notifier?.removeListener(_onNotifierChanged);
-      _notifier = conversationsNotifier;
-      _notifier?.addListener(_onNotifierChanged);
-    }
-    
-    final state = conversationsNotifier.state;
-    
-    // Load conversations on first build if in initial state
-    if (!_hasLoaded) {
-      _hasLoaded = true;
-      state.whenOrNull(
-        initial: () {
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              conversationsNotifier.loadConversations();
-            }
-          });
-        },
-      );
-    }
 
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: conversationsNotifier,
+      builder: (context, _) {
+        final state = conversationsNotifier.state;
+
+        // Load conversations on first build if in initial state
+        if (!_hasLoaded) {
+          _hasLoaded = true;
+          state.whenOrNull(
+            initial: () {
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  conversationsNotifier.loadConversations();
+                }
+              });
+            },
+          );
+        }
+
+        return Scaffold(
       appBar: AppBar(
         title: _isSearching
             ? TextField(
@@ -154,6 +142,8 @@ class _ChatTabState extends ConsumerState<ChatTab> {
         icon: const Icon(LucideIcons.messageSquarePlus),
         label: const Text('New Chat'),
       ),
+        );
+      },
     );
   }
 }

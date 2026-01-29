@@ -32,7 +32,6 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
 class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  ProjectDetailChangeNotifier? _notifier;
 
   @override
   void initState() {
@@ -42,46 +41,37 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
 
   @override
   void dispose() {
-    _notifier?.removeListener(_onNotifierChanged);
     _tabController.dispose();
     super.dispose();
-  }
-
-  void _onNotifierChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final projectNotifier = ref.watch(projectDetailNotifierProvider(widget.projectId));
     
-    // Set up listener for ChangeNotifier updates
-    if (_notifier != projectNotifier) {
-      _notifier?.removeListener(_onNotifierChanged);
-      _notifier = projectNotifier;
-      _notifier?.addListener(_onNotifierChanged);
-    }
-    
-    final state = projectNotifier.state;
-    
-    // Load project if in initial state
-    state.whenOrNull(
-      initial: () {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            projectNotifier.loadProject();
-          }
-        });
-      },
-    );
+    return AnimatedBuilder(
+      animation: projectNotifier,
+      builder: (context, _) {
+        final state = projectNotifier.state;
 
-    return state.when(
-      initial: () => _buildLoadingScaffold(context),
-      loading: () => _buildLoadingScaffold(context),
-      loaded: (project) => _buildLoadedScaffold(context, project),
-      error: (message) => _buildErrorScaffold(context, message),
+        // Load project if in initial state
+        state.whenOrNull(
+          initial: () {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                projectNotifier.loadProject();
+              }
+            });
+          },
+        );
+
+        return state.when(
+          initial: () => _buildLoadingScaffold(context),
+          loading: () => _buildLoadingScaffold(context),
+          loaded: (project) => _buildLoadedScaffold(context, project),
+          error: (message) => _buildErrorScaffold(context, message),
+        );
+      },
     );
   }
 

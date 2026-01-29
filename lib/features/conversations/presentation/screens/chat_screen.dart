@@ -25,19 +25,12 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
-  ChatChangeNotifier? _notifier;
+  int _lastMessageCount = 0;
 
   @override
   void dispose() {
-    _notifier?.removeListener(_onNotifierChanged);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _onNotifierChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _scrollToBottom() {
@@ -55,49 +48,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatNotifier = ref.watch(chatNotifierProvider(widget.conversationId));
-    final chatState = chatNotifier.state;
     
-    // Load chat if in initial state
-    chatState.whenOrNull(
-      initial: () {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            chatNotifier.loadChat();
-          }
-        });
-      },
-    );
+    return AnimatedBuilder(
+      animation: chatNotifier,
+      builder: (context, _) {
+        final chatState = chatNotifier.state;
 
-    // Scroll to bottom when messages change
-    ref.listen<ChatChangeNotifier>(
-      chatNotifierProvider(widget.conversationId),
-      (prev, next) {
-        if (next.state is ChatLoaded) {
-          final nextState = next.state as ChatLoaded;
-          if (prev?.state is ChatLoaded) {
-            final prevState = prev!.state as ChatLoaded;
-            if (nextState.messages.length != prevState.messages.length) {
-              _scrollToBottom();
-            }
-          } else {
-            _scrollToBottom();
+        // Load chat if in initial state
+        chatState.whenOrNull(
+          initial: () {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                chatNotifier.loadChat();
+              }
+            });
+          },
+        );
+
+        // Scroll to bottom when new messages arrive
+        if (chatState is ChatLoaded) {
+          if (chatState.messages.length > _lastMessageCount) {
+            _lastMessageCount = chatState.messages.length;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _scrollToBottom();
+              }
+            });
           }
         }
-      },
-    );
 
-    return chatState.when(
-      initial: () => _buildLoadingScaffold(context),
-      loading: () => _buildLoadingScaffold(context),
-      loaded: (conversation, messages, isSending, isStreaming, streamingContent, pendingSources) {
-        return _buildLoadedScaffold(
-          context,
-          conversation,
-          messages,
-          isSending || isStreaming,
+        return chatState.when(
+          initial: () => _buildLoadingScaffold(context),
+          loading: () => _buildLoadingScaffold(context),
+          loaded: (conversation, messages, isSending, isStreaming, streamingContent, pendingSources) {
+            return _buildLoadedScaffold(
+              context,
+              conversation,
+              messages,
+              isSending || isStreaming,
+            );
+          },
+          error: (message) => _buildErrorScaffold(context, message),
         );
       },
-      error: (message) => _buildErrorScaffold(context, message),
     );
   }
 
@@ -180,6 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   conversation.isProjectChat
@@ -189,12 +183,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   color: colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  conversation.isProjectChat
-                      ? conversation.projectName ?? 'Project Chat'
-                      : 'Quick Chat',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                Flexible(
+                  child: Text(
+                    conversation.isProjectChat
+                        ? conversation.projectName ?? 'Project Chat'
+                        : 'Quick Chat',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

@@ -20,96 +20,77 @@ class RecentConversationsSection extends ConsumerStatefulWidget {
 }
 
 class _RecentConversationsSectionState extends ConsumerState<RecentConversationsSection> {
-  ConversationsChangeNotifier? _notifier;
   bool _hasLoaded = false;
-
-  @override
-  void dispose() {
-    _notifier?.removeListener(_onNotifierChanged);
-    super.dispose();
-  }
-
-  void _onNotifierChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final conversationsNotifier = ref.watch(conversationsNotifierProvider);
-    
-    // Set up listener for ChangeNotifier updates
-    if (_notifier != conversationsNotifier) {
-      _notifier?.removeListener(_onNotifierChanged);
-      _notifier = conversationsNotifier;
-      _notifier?.addListener(_onNotifierChanged);
-    }
-    
-    final state = conversationsNotifier.state;
-    
-    // Load conversations if in initial state
-    if (!_hasLoaded) {
-      _hasLoaded = true;
-      state.whenOrNull(
-        initial: () {
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              conversationsNotifier.loadConversations();
-            }
-          });
-        },
-      );
-    }
 
-    return state.when(
-      initial: () => _buildLoading(context),
-      loading: () => _buildLoading(context),
-      loaded: (conversations, total, isLoadingMore, hasMore) {
-        // Show only the 3 most recent
-        final recentConversations = conversations.take(3).toList();
+    return AnimatedBuilder(
+      animation: conversationsNotifier,
+      builder: (context, _) {
+        final state = conversationsNotifier.state;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        // Load conversations if in initial state
+        if (!_hasLoaded) {
+          _hasLoaded = true;
+          state.whenOrNull(
+            initial: () {
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  conversationsNotifier.loadConversations();
+                }
+              });
+            },
+          );
+        }
+
+        return state.when(
+          initial: () => _buildLoading(context),
+          loading: () => _buildLoading(context),
+          loaded: (conversations, total, isLoadingMore, hasMore) {
+            final recentConversations = conversations.take(3).toList();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Recent Conversations',
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Conversations',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // TODO: navigate to full conversations list
+                      },
+                      child: const Text('View All'),
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to chat tab (index 2 in MainShell)
-                    // We can't directly change tab index, so navigate to chat route
-                    // For now, just show a message or navigate to conversations list
-                    // TODO: Add a way to switch tabs programmatically
-                  },
-                  child: const Text('View All'),
-                ),
+                const SizedBox(height: AppSpacing.sm),
+                
+                if (recentConversations.isEmpty)
+                  _buildEmptyState(context)
+                else
+                  ...recentConversations.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final conversation = entry.value;
+                    return _buildConversationTile(context, conversation)
+                        .animate()
+                        .fadeIn(delay: (100 * index).ms)
+                        .slideX(begin: 0.05, end: 0);
+                  }),
               ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            
-            if (recentConversations.isEmpty)
-              _buildEmptyState(context)
-            else
-              ...recentConversations.asMap().entries.map((entry) {
-                final index = entry.key;
-                final conversation = entry.value;
-                return _buildConversationTile(context, conversation)
-                    .animate()
-                    .fadeIn(delay: (100 * index).ms)
-                    .slideX(begin: 0.05, end: 0);
-              }),
-          ],
+            );
+          },
+          error: (_) => _buildEmptyState(context),
         );
       },
-      error: (_) => _buildEmptyState(context),
     );
   }
 
