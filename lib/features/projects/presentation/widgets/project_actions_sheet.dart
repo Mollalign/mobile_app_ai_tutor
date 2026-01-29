@@ -131,7 +131,7 @@ class ProjectActionsSheet extends ConsumerWidget {
             onPressed: () async {
               if (formKey.currentState!.validate()) {
                 Navigator.of(context).pop();
-                await container
+                final success = await container
                     .read(projectDetailNotifierProvider(project.id))
                     .updateProject(
                       name: nameController.text,
@@ -139,8 +139,19 @@ class ProjectActionsSheet extends ConsumerWidget {
                           ? null 
                           : descriptionController.text,
                     );
-                // Refresh projects list
-                container.invalidate(projectsNotifierProvider);
+                
+                if (success) {
+                  // Refresh projects list
+                  container.invalidate(projectsNotifierProvider);
+                } else if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     SnackBar(
+                       content: const Text('Failed to update project'),
+                       backgroundColor: Theme.of(context).colorScheme.error,
+                       behavior: SnackBarBehavior.floating,
+                     ),
+                   );
+                }
               }
             },
             child: const Text('Save'),

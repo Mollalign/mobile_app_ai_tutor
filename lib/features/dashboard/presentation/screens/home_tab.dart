@@ -14,6 +14,7 @@ import '../widgets/quick_action_card.dart';
 import '../widgets/recent_conversations_section.dart';
 import '../widgets/projects_overview_section.dart';
 import '../widgets/stats_card.dart';
+import '../../../projects/presentation/widgets/create_project_sheet.dart';
 
 /// Home tab - the main dashboard view.
 /// 
@@ -228,12 +229,7 @@ class HomeTab extends ConsumerWidget {
                 label: 'New Project',
                 description: 'Create a study project',
                 color: colorScheme.primary,
-                onTap: () {
-                  // Navigate to projects tab and show create sheet
-                  // We'll need to trigger the create project action
-                  // For now, just navigate to projects tab
-                  // TODO: Add a way to trigger create project from here
-                },
+                onTap: () => CreateProjectSheet.show(context),
               ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
             ),
             const SizedBox(width: AppSpacing.md),

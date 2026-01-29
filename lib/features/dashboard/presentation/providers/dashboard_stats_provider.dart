@@ -26,6 +26,14 @@ class DashboardStats {
 }
 
 /// Provider that aggregates dashboard statistics from various sources.
+/// 
+/// LIMITATION: Documents count requires either:
+/// 1. A backend endpoint that returns aggregated user stats (recommended)
+/// 2. Adding a `documentCount` field to the Project entity
+/// 
+/// For now, totalDocuments will show 0 until one of these solutions is implemented.
+/// Backend endpoint suggestion: GET /api/users/me/stats
+/// Response: { total_projects, total_conversations, total_documents, day_streak }
 final dashboardStatsProvider = Provider.autoDispose<DashboardStats>((ref) {
   // Watch projects state
   final projectsState = ref.watch(projectsNotifierProvider);
@@ -39,27 +47,29 @@ final dashboardStatsProvider = Provider.autoDispose<DashboardStats>((ref) {
   int totalConversations = 0;
   int totalDocuments = 0;
 
-  // Get projects count
+  // Get projects count (excludes loading state)
   projectsState.whenOrNull(
     loaded: (projects, isLoadingMore, hasMore) {
-      totalProjects = projects.length;
-      // TODO: Sum document counts from all projects
-      // For now, we'll need to fetch document stats per project
-      // This is a limitation - ideally backend would provide aggregated stats
+      totalProjects = projects.where((p) => !p.isArchived).length;
     },
   );
 
-  // Get conversations count
+  // Get conversations count from the total field
   conversationsState.whenOrNull(
     loaded: (conversations, total, isLoadingMore, hasMore) {
       totalConversations = total;
     },
   );
 
+  // TODO: Implement one of these solutions for documents count:
+  // Option 1: Create GET /api/users/me/stats endpoint (recommended)
+  // Option 2: Add documentCount field to Project model and API
+  // Option 3: Sum documents by iterating project document providers (expensive)
+
   return DashboardStats(
     totalProjects: totalProjects,
     totalConversations: totalConversations,
-    totalDocuments: totalDocuments, // Will be 0 until we aggregate
-    dayStreak: 0, // Placeholder
+    totalDocuments: totalDocuments,
+    dayStreak: 0, // Requires backend tracking of daily activity
   );
 });

@@ -80,7 +80,7 @@ class ProjectDetailChangeNotifier extends ChangeNotifier {
   }
 
   /// Update project.
-  Future<void> updateProject({
+  Future<bool> updateProject({
     String? name,
     String? description,
     bool? isArchived,
@@ -89,7 +89,7 @@ class ProjectDetailChangeNotifier extends ChangeNotifier {
       loaded: (s) => s.project,
     );
 
-    if (currentProject == null) return;
+    if (currentProject == null) return false;
 
     _state = const ProjectDetailState.loading();
     notifyListeners();
@@ -102,11 +102,14 @@ class ProjectDetailChangeNotifier extends ChangeNotifier {
         isArchived: isArchived,
       );
       _state = ProjectDetailState.loaded(project: updatedProject);
+      notifyListeners();
+      return true;
     } catch (e) {
       // Restore previous state on error
       _state = ProjectDetailState.loaded(project: currentProject);
+      notifyListeners();
+      return false;
     }
-    notifyListeners();
   }
 
   /// Delete project.
