@@ -8,16 +8,14 @@ class ApiConstants {
   // Base Configuration
   // ============================================================
 
-  // IMPORTANT: For physical devices, your phone and computer 
-  // must be on the SAME WiFi network!
+  // Using ADB reverse port forwarding (USB connection)
+  // This forwards phone's localhost:8000 → computer's localhost:8000
   //
-  // To find your computer's IP:
-  //   Linux: hostname -I
-  //   Mac: ifconfig | grep "inet "
-  //   Windows: ipconfig
+  // To set up (run once when phone connects):
+  //   adb reverse tcp:8000 tcp:8000
   //
-  // Current setup: Physical Android device
-  static const String baseUrl = 'http://192.168.137.199:8000';
+  // This works regardless of WiFi network!
+  static const String baseUrl = 'http://localhost:8000';
 
   // API version prefix
   static const String apiPrefix = '/api/v1';
