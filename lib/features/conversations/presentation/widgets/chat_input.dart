@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 
-/// Chat input widget with text field and send button.
+/// Modern chat input widget with pill-shaped design.
+/// Inspired by ChatGPT's clean, minimal input.
 class ChatInput extends StatefulWidget {
   final Function(String) onSend;
   final bool isLoading;
@@ -69,159 +71,201 @@ class _ChatInputState extends State<ChatInput> {
         left: AppSpacing.md,
         right: AppSpacing.md,
         top: AppSpacing.sm,
-        bottom: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
+        bottom: MediaQuery.of(context).padding.bottom + AppSpacing.md,
       ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
+        // Subtle top shadow
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
-        ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Socratic mode indicator
-          if (widget.onToggleSocratic != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: InkWell(
-                onTap: widget.onToggleSocratic,
-                borderRadius: AppRadius.borderRadiusSm,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: widget.isSocratic
-                        ? colorScheme.tertiaryContainer.withAlpha(128)
-                        : colorScheme.surfaceContainerLow,
-                    borderRadius: AppRadius.borderRadiusSm,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        LucideIcons.graduationCap,
-                        size: 14,
-                        color: widget.isSocratic
-                            ? colorScheme.tertiary
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          widget.isSocratic
-                              ? 'Socratic Mode On'
-                              : 'Direct Answers',
-                          style: textTheme.labelSmall?.copyWith(
-                            color: widget.isSocratic
-                                ? colorScheme.tertiary
-                                : colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        LucideIcons.chevronDown,
-                        size: 14,
-                        color: widget.isSocratic
-                            ? colorScheme.tertiary
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
+          // Main input container
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: _focusNode.hasFocus
+                    ? colorScheme.primary.withAlpha(128)
+                    : Colors.transparent,
+                width: 1.5,
               ),
             ),
-
-          // Input row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Text field
-              Expanded(
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: AppRadius.borderRadiusMd,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Socratic mode toggle (compact)
+                if (widget.onToggleSocratic != null)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: AppSpacing.xs,
+                      bottom: AppSpacing.xs,
+                    ),
+                    child: IconButton(
+                      onPressed: widget.onToggleSocratic,
+                      icon: Icon(
+                        LucideIcons.graduationCap,
+                        size: 20,
+                        color: widget.isSocratic
+                            ? colorScheme.tertiary
+                            : colorScheme.onSurfaceVariant.withAlpha(128),
+                      ),
+                      tooltip: widget.isSocratic
+                          ? 'Socratic mode (tap to disable)'
+                          : 'Direct mode (tap for Socratic)',
+                      visualDensity: VisualDensity.compact,
+                      style: IconButton.styleFrom(
+                        backgroundColor: widget.isSocratic
+                            ? colorScheme.tertiaryContainer.withAlpha(77)
+                            : Colors.transparent,
+                      ),
+                    ),
                   ),
+
+                // Text field
+                Expanded(
                   child: TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     enabled: !widget.isLoading,
-                    maxLines: null,
+                    maxLines: 4,
+                    minLines: 1,
                     textCapitalization: TextCapitalization.sentences,
                     textInputAction: TextInputAction.newline,
                     keyboardType: TextInputType.multiline,
                     style: textTheme.bodyMedium,
                     decoration: InputDecoration(
-                      hintText: widget.hintText ?? 'Ask a question...',
+                      hintText: widget.hintText ?? 'Message...',
                       hintStyle: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant.withAlpha(153),
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
+                      contentPadding: EdgeInsets.only(
+                        left: widget.onToggleSocratic != null ? 0 : AppSpacing.lg,
+                        right: AppSpacing.sm,
+                        top: AppSpacing.md,
+                        bottom: AppSpacing.md,
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
 
-              // Send button
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                child: IconButton.filled(
-                  onPressed: _hasText && !widget.isLoading ? _sendMessage : null,
-                  icon: widget.isLoading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.onPrimary,
-                          ),
-                        )
-                      : const Icon(LucideIcons.send),
-                  style: IconButton.styleFrom(
-                    backgroundColor: _hasText && !widget.isLoading
-                        ? colorScheme.primary
-                        : colorScheme.surfaceContainerHigh,
-                    foregroundColor: _hasText && !widget.isLoading
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    disabledBackgroundColor: colorScheme.surfaceContainerHigh,
-                    disabledForegroundColor: colorScheme.onSurfaceVariant,
+                // Send button
+                Padding(
+                  padding: const EdgeInsets.only(
+                    right: AppSpacing.xs,
+                    bottom: AppSpacing.xs,
+                  ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    child: _SendButton(
+                      isEnabled: _hasText && !widget.isLoading,
+                      isLoading: widget.isLoading,
+                      onPressed: _sendMessage,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+
+          // Mode indicator (subtle, below input)
+          if (widget.onToggleSocratic != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                widget.isSocratic
+                    ? 'Socratic mode • Guides with questions'
+                    : 'Direct mode • Gives straight answers',
+                key: ValueKey(widget.isSocratic),
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withAlpha(153),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// Simplified chat input for quick chats.
+/// Animated send button.
+class _SendButton extends StatelessWidget {
+  final bool isEnabled;
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _SendButton({
+    required this.isEnabled,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: isEnabled ? colorScheme.primary : colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: isEnabled ? onPressed : null,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          child: isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isEnabled
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : Icon(
+                  LucideIcons.arrowUp,
+                  size: 20,
+                  color: isEnabled
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant.withAlpha(128),
+                ),
+        ),
+      ),
+    ).animate(target: isEnabled ? 1 : 0).scale(
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1, 1),
+          duration: 200.ms,
+        );
+  }
+}
+
+/// Simplified chat input for quick use.
 class SimpleChatInput extends StatefulWidget {
   final Function(String) onSend;
   final bool isLoading;
+  final String? hintText;
 
   const SimpleChatInput({
     super.key,
     required this.onSend,
     this.isLoading = false,
+    this.hintText,
   });
 
   @override
@@ -267,44 +311,42 @@ class _SimpleChatInputState extends State<SimpleChatInput> {
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              enabled: !widget.isLoading,
-              textInputAction: TextInputAction.send,
-              decoration: InputDecoration(
-                hintText: 'Type a message...',
-                hintStyle: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                enabled: !widget.isLoading,
+                textInputAction: TextInputAction.send,
+                decoration: InputDecoration(
+                  hintText: widget.hintText ?? 'Message...',
+                  hintStyle: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withAlpha(153),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
                 ),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: AppRadius.borderRadiusMd,
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
+                onSubmitted: (_) => _sendMessage(),
               ),
-              onSubmitted: (_) => _sendMessage(),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          IconButton.filled(
-            onPressed: _hasText && !widget.isLoading ? _sendMessage : null,
-            icon: widget.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(LucideIcons.send),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xs),
+              child: _SendButton(
+                isEnabled: _hasText && !widget.isLoading,
+                isLoading: widget.isLoading,
+                onPressed: _sendMessage,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

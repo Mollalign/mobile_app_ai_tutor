@@ -5,6 +5,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../domain/entities/entities.dart';
 
 /// Card displaying a conversation in the list.
+/// Clean, minimal design inspired by modern chat apps.
 class ConversationCard extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
@@ -22,34 +23,26 @@ class ConversationCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return Material(
+      color: colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.borderRadiusMd,
+        onLongPress: onDelete,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon
+              // Chat type indicator (colored dot)
               Container(
-                width: 44,
-                height: 44,
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
                   color: conversation.isProjectChat
-                      ? colorScheme.primaryContainer
-                      : colorScheme.secondaryContainer,
-                  borderRadius: AppRadius.borderRadiusSm,
-                ),
-                child: Icon(
-                  conversation.isProjectChat
-                      ? LucideIcons.bookOpen
-                      : LucideIcons.sparkles,
-                  color: conversation.isProjectChat
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSecondaryContainer,
-                  size: 20,
+                      ? colorScheme.primary
+                      : colorScheme.secondary,
+                  shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -59,144 +52,71 @@ class ConversationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title and time
+                    // Title
+                    Text(
+                      conversation.displayTitle,
+                      style: textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Metadata row
                     Row(
                       children: [
-                        Expanded(
-                          child: Text(
-                            conversation.displayTitle,
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        // Chat type
+                        Text(
+                          conversation.isProjectChat ? 'Project' : 'Quick',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Flexible(
-                          child: Text(
-                            conversation.lastActivityRelative,
+
+                        // Separator
+                        Text(
+                          ' · ',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+
+                        // Message count
+                        Text(
+                          '${conversation.messageCount} messages',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+
+                        // Socratic indicator
+                        if (conversation.isSocratic) ...[
+                          Text(
+                            ' · ',
                             style: textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-
-                    // Chat type badge and message count
-                    Row(
-                      children: [
-                        // Chat type badge
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: conversation.isProjectChat
-                                  ? colorScheme.primaryContainer.withAlpha(128)
-                                  : colorScheme.secondaryContainer.withAlpha(128),
-                              borderRadius: AppRadius.borderRadiusXs,
-                            ),
-                            child: Text(
-                              conversation.chatType.displayName,
-                              style: textTheme.labelSmall?.copyWith(
-                                color: conversation.isProjectChat
-                                    ? colorScheme.primary
-                                    : colorScheme.secondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-
-                        // Socratic mode indicator
-                        if (conversation.isSocratic) ...[
                           Icon(
                             LucideIcons.graduationCap,
-                            size: 14,
+                            size: 12,
                             color: colorScheme.tertiary,
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'Socratic',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.tertiary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
                         ],
-
-                        // Message count
-                        Icon(
-                          LucideIcons.messageSquare,
-                          size: 14,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            '${conversation.messageCount}',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
                       ],
                     ),
-
-                    // Project name (if project chat)
-                    if (conversation.isProjectChat &&
-                        conversation.projectName != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: [
-                          Icon(
-                            LucideIcons.folder,
-                            size: 14,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              conversation.projectName!,
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
 
-              // More options
-              if (onDelete != null) ...[
-                const SizedBox(width: AppSpacing.sm),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: Icon(
-                    LucideIcons.trash2,
-                    size: 18,
-                    color: colorScheme.error,
-                  ),
-                  visualDensity: VisualDensity.compact,
+              // Time
+              Text(
+                conversation.lastActivityRelative,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -205,7 +125,7 @@ class ConversationCard extends StatelessWidget {
   }
 }
 
-/// Tile version for list view.
+/// Tile version for list view (more compact).
 class ConversationListTile extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
@@ -226,10 +146,19 @@ class ConversationListTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       onLongPress: onLongPress,
-      leading: CircleAvatar(
-        backgroundColor: conversation.isProjectChat
-            ? colorScheme.primaryContainer
-            : colorScheme.secondaryContainer,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: conversation.isProjectChat
+              ? colorScheme.primaryContainer
+              : colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
         child: Icon(
           conversation.isProjectChat
               ? LucideIcons.bookOpen
@@ -244,38 +173,35 @@ class ConversationListTile extends StatelessWidget {
         conversation.displayTitle,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: textTheme.titleSmall?.copyWith(
+        style: textTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.w500,
         ),
       ),
-      subtitle: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              conversation.chatType.displayName,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.primary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Flexible(
-            child: Text(
-              ' • ${conversation.messageCount} messages',
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-      trailing: Text(
-        conversation.lastActivityRelative,
+      subtitle: Text(
+        '${conversation.messageCount} messages',
         style: textTheme.bodySmall?.copyWith(
           color: colorScheme.onSurfaceVariant,
         ),
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            conversation.lastActivityRelative,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (conversation.isSocratic) ...[
+            const SizedBox(height: 4),
+            Icon(
+              LucideIcons.graduationCap,
+              size: 14,
+              color: colorScheme.tertiary,
+            ),
+          ],
+        ],
       ),
     );
   }

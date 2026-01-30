@@ -11,6 +11,7 @@ import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
 /// Chat screen for a single conversation.
+/// Clean, minimal design focused on the conversation.
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
 
@@ -68,7 +69,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         // Scroll to bottom when new messages arrive or during streaming
         if (chatState is ChatLoaded) {
-          // Debug: Log streaming state
           if (chatState.isStreaming) {
             debugPrint('ChatScreen: Streaming - content length: ${chatState.streamingContent?.length ?? 0}');
           }
@@ -104,11 +104,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildLoadingScaffold(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Loading...'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: const Center(child: CircularProgressIndicator()),
+      body: Center(
+        child: CircularProgressIndicator(
+          color: colorScheme.primary,
+          strokeWidth: 2,
+        ),
+      ),
     );
   }
 
@@ -118,7 +126,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Error'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: Center(
         child: Padding(
@@ -126,15 +135,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                LucideIcons.alertCircle,
-                size: 48,
-                color: colorScheme.error,
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  LucideIcons.alertCircle,
+                  size: 32,
+                  color: colorScheme.onErrorContainer,
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Failed to load conversation',
-                style: textTheme.titleLarge?.copyWith(
+                'Something went wrong',
+                style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -151,8 +168,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 onPressed: () => ref
                     .read(chatNotifierProvider(widget.conversationId))
                     .loadChat(),
-                icon: const Icon(LucideIcons.refreshCw),
-                label: const Text('Try Again'),
+                icon: const Icon(LucideIcons.refreshCw, size: 18),
+                label: const Text('Try again'),
               ),
             ],
           ),
@@ -172,82 +189,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              conversation.displayTitle,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  conversation.isProjectChat
-                      ? LucideIcons.bookOpen
-                      : LucideIcons.sparkles,
-                  size: 12,
-                  color: colorScheme.onSurfaceVariant,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: GestureDetector(
+          onTap: () => _showConversationInfo(context, conversation),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Chat type indicator
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: conversation.isProjectChat
+                      ? colorScheme.primary
+                      : colorScheme.secondary,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    conversation.isProjectChat
-                        ? conversation.projectName ?? 'Project Chat'
-                        : 'Quick Chat',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  conversation.displayTitle,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          // Socratic mode toggle
-          IconButton(
-            onPressed: () => ref
-                .read(chatNotifierProvider(widget.conversationId))
-                .toggleSocraticMode(),
-            icon: Icon(
-              LucideIcons.graduationCap,
-              color: conversation.isSocratic
-                  ? colorScheme.tertiary
-                  : colorScheme.onSurfaceVariant,
-            ),
-            tooltip: conversation.isSocratic
-                ? 'Socratic mode on'
-                : 'Socratic mode off',
-          ),
-          // More options
-          PopupMenuButton(
-            icon: const Icon(LucideIcons.moreVertical),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                onTap: () => _showRenameDialog(context, conversation),
-                child: const Row(
-                  children: [
-                    Icon(LucideIcons.pencil, size: 18),
-                    SizedBox(width: 12),
-                    Text('Rename'),
-                  ],
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              PopupMenuItem(
-                onTap: () => _confirmDelete(context, conversation),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.trash2, size: 18, color: colorScheme.error),
-                    const SizedBox(width: 12),
-                    Text('Delete', style: TextStyle(color: colorScheme.error)),
-                  ],
-                ),
+              const SizedBox(width: 4),
+              Icon(
+                LucideIcons.chevronDown,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
               ),
             ],
+          ),
+        ),
+        actions: [
+          // More options
+          IconButton(
+            onPressed: () => _showOptionsMenu(context, conversation),
+            icon: const Icon(LucideIcons.moreHorizontal),
+            tooltip: 'Options',
           ),
         ],
       ),
@@ -263,13 +248,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.only(
-                      top: AppSpacing.md,
-                      bottom: AppSpacing.md,
+                      top: AppSpacing.sm,
+                      bottom: AppSpacing.sm,
                     ),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
-                      // Use ValueKey with content length to force rebuild during streaming
                       return MessageBubble(
                         key: ValueKey('${message.id}-${message.content.length}'),
                         message: message,
@@ -296,10 +280,134 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _sendMessage(String content) {
-    // Use streaming for better UX
     ref
         .read(chatNotifierProvider(widget.conversationId))
         .sendMessageStreaming(content);
+  }
+
+  void _showConversationInfo(BuildContext context, ConversationDetail conversation) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              conversation.displayTitle,
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                _InfoChip(
+                  icon: conversation.isProjectChat
+                      ? LucideIcons.bookOpen
+                      : LucideIcons.sparkles,
+                  label: conversation.isProjectChat ? 'Project Chat' : 'Quick Chat',
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                if (conversation.isSocratic)
+                  _InfoChip(
+                    icon: LucideIcons.graduationCap,
+                    label: 'Socratic',
+                    color: colorScheme.tertiary,
+                  ),
+              ],
+            ),
+            if (conversation.isProjectChat && conversation.projectName != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Icon(
+                    LucideIcons.folder,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      conversation.projectName!,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOptionsMenu(BuildContext context, ConversationDetail conversation) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.pencil),
+              title: const Text('Rename'),
+              onTap: () {
+                Navigator.pop(context);
+                _showRenameDialog(context, conversation);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                conversation.isSocratic
+                    ? LucideIcons.graduationCap
+                    : LucideIcons.messageSquare,
+                color: colorScheme.tertiary,
+              ),
+              title: Text(conversation.isSocratic
+                  ? 'Switch to Direct mode'
+                  : 'Switch to Socratic mode'),
+              onTap: () {
+                Navigator.pop(context);
+                ref
+                    .read(chatNotifierProvider(widget.conversationId))
+                    .toggleSocraticMode();
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(LucideIcons.trash2, color: colorScheme.error),
+              title: Text(
+                'Delete conversation',
+                style: TextStyle(color: colorScheme.error),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(context, conversation);
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showRenameDialog(BuildContext context, ConversationDetail conversation) {
@@ -308,11 +416,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Rename Conversation'),
+        title: const Text('Rename conversation'),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            labelText: 'Title',
             hintText: 'Enter a title',
           ),
           autofocus: true,
@@ -322,15 +429,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  ref
-                      .read(chatNotifierProvider(widget.conversationId))
-                      .updateTitle(controller.text.trim());
-                },
-                child: const Text('Save'),
-              ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(chatNotifierProvider(widget.conversationId))
+                  .updateTitle(controller.text.trim());
+            },
+            child: const Text('Save'),
+          ),
         ],
       ),
     );
@@ -343,9 +450,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         icon: Icon(LucideIcons.alertTriangle, color: colorScheme.error),
-        title: const Text('Delete Conversation?'),
+        title: const Text('Delete conversation?'),
         content: const Text(
-          'This will permanently delete this conversation and all its messages. This action cannot be undone.',
+          'This will permanently delete this conversation and all messages.',
         ),
         actions: [
           TextButton(
@@ -373,7 +480,48 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
-/// Empty state with suggested prompts.
+/// Info chip for conversation details.
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withAlpha(26),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Empty state with welcoming prompts.
 class _EmptyChat extends StatelessWidget {
   final ConversationDetail conversation;
   final Function(String) onSendMessage;
@@ -390,16 +538,14 @@ class _EmptyChat extends StatelessWidget {
 
     final prompts = conversation.isProjectChat
         ? [
-            'Summarize the key concepts from my documents',
-            'What are the main topics covered?',
-            'Help me understand the relationship between...',
-            'Quiz me on the material',
+            'Summarize the key concepts',
+            'What are the main topics?',
+            'Quiz me on this material',
           ]
         : [
-            'Explain how recursion works',
-            'What is the difference between a stack and a queue?',
-            'Help me understand Big O notation',
-            'Write a simple sorting algorithm',
+            'Explain recursion simply',
+            'What is Big O notation?',
+            'Difference between stack & queue',
           ];
 
     return Center(
@@ -408,31 +554,34 @@ class _EmptyChat extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
+            // AI Logo
             Container(
-              width: 80,
-              height: 80,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                conversation.isProjectChat
-                    ? LucideIcons.bookOpen
-                    : LucideIcons.sparkles,
-                size: 40,
-                color: colorScheme.onPrimaryContainer,
+              child: const Icon(
+                LucideIcons.sparkles,
+                size: 36,
+                color: Colors.white,
               ),
             ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
             const SizedBox(height: AppSpacing.lg),
 
-            // Title
+            // Welcome text
             Text(
-              conversation.isProjectChat
-                  ? 'Ask about your documents'
-                  : 'Start a conversation',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+              'How can I help you?',
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ).animate().fadeIn(delay: 100.ms),
             const SizedBox(height: AppSpacing.sm),
@@ -440,8 +589,8 @@ class _EmptyChat extends StatelessWidget {
             // Subtitle
             Text(
               conversation.isSocratic
-                  ? "I'll guide your learning with thoughtful questions"
-                  : "I'll help answer your questions directly",
+                  ? "I'll guide your learning with questions"
+                  : "I'll answer your questions directly",
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -450,28 +599,22 @@ class _EmptyChat extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
 
             // Suggested prompts
-            Text(
-              'Try asking:',
-              style: textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ).animate().fadeIn(delay: 300.ms),
-            const SizedBox(height: AppSpacing.md),
-
-            ...prompts.asMap().entries.map((entry) {
-              final index = entry.key;
-              final prompt = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _SuggestedPrompt(
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              alignment: WrapAlignment.center,
+              children: prompts.asMap().entries.map((entry) {
+                final index = entry.key;
+                final prompt = entry.value;
+                return _SuggestionChip(
                   text: prompt,
                   onTap: () => onSendMessage(prompt),
-                ).animate().fadeIn(delay: (400 + index * 100).ms).slideY(
+                ).animate().fadeIn(delay: (300 + index * 100).ms).slideY(
                       begin: 0.2,
                       duration: 300.ms,
-                    ),
-              );
-            }),
+                    );
+              }).toList(),
+            ),
           ],
         ),
       ),
@@ -479,12 +622,12 @@ class _EmptyChat extends StatelessWidget {
   }
 }
 
-/// Suggested prompt chip.
-class _SuggestedPrompt extends StatelessWidget {
+/// Suggestion chip button.
+class _SuggestionChip extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
 
-  const _SuggestedPrompt({
+  const _SuggestionChip({
     required this.text,
     required this.onTap,
   });
@@ -495,39 +638,21 @@ class _SuggestedPrompt extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Material(
-      color: colorScheme.surfaceContainerLow,
-      borderRadius: AppRadius.borderRadiusMd,
+      color: colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.borderRadiusMd,
-        child: Container(
-          width: double.infinity,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
-          child: Row(
-            children: [
-              Icon(
-                LucideIcons.messageSquare,
-                size: 16,
-                color: colorScheme.primary,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  text,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Icon(
-                LucideIcons.arrowRight,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ],
+          child: Text(
+            text,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
       ),

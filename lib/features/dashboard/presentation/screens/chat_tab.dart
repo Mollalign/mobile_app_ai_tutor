@@ -12,11 +12,7 @@ import '../../../conversations/presentation/providers/providers.dart';
 import '../../../conversations/presentation/widgets/widgets.dart';
 
 /// Chat tab - shows all conversations.
-///
-/// Features:
-/// - Quick chats and project chats
-/// - Search conversations
-/// - Create new chat
+/// Clean, minimal design with focus on conversations.
 class ChatTab extends ConsumerStatefulWidget {
   const ChatTab({super.key});
 
@@ -39,7 +35,6 @@ class _ChatTabState extends ConsumerState<ChatTab> {
     final config = await NewChatSheet.show(context);
     if (config == null || !mounted) return;
 
-    // Create conversation
     final notifier = ref.read(createConversationNotifierProvider);
     final conversation = await notifier.createConversation(
       projectId: config.projectId,
@@ -48,9 +43,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
     );
 
     if (conversation != null && mounted) {
-      // Add to conversations list
       ref.read(conversationsNotifierProvider).addConversation(conversation);
-      // Navigate to chat
       context.push('${AppRoutes.conversations}/${conversation.id}');
     }
   }
@@ -66,7 +59,6 @@ class _ChatTabState extends ConsumerState<ChatTab> {
       builder: (context, _) {
         final state = conversationsNotifier.state;
 
-        // Load conversations on first build if in initial state
         if (!_hasLoaded) {
           _hasLoaded = true;
           state.whenOrNull(
@@ -81,67 +73,91 @@ class _ChatTabState extends ConsumerState<ChatTab> {
         }
 
         return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Search conversations...',
-                  hintStyle: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.sm,
                   ),
-                  border: InputBorder.none,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _isSearching
+                            ? TextField(
+                                controller: _searchController,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: 'Search conversations...',
+                                  hintStyle: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                style: textTheme.bodyMedium,
+                                onChanged: (value) => setState(() {}),
+                              )
+                            : Text(
+                                'Chats',
+                                style: textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isSearching = !_isSearching;
+                            if (!_isSearching) {
+                              _searchController.clear();
+                            }
+                          });
+                        },
+                        icon: Icon(
+                          _isSearching ? LucideIcons.x : LucideIcons.search,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                style: textTheme.bodyMedium,
-                onChanged: (value) {
-                  // TODO: Implement search filtering
-                  setState(() {});
-                },
-              )
-            : const Text('Conversations'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                }
-              });
-            },
-            icon: Icon(_isSearching ? LucideIcons.x : LucideIcons.search),
+
+                // Content
+                Expanded(
+                  child: state.when(
+                    initial: () => const _LoadingState(),
+                    loading: () => const _LoadingState(),
+                    loaded: (conversations, total, isLoadingMore, hasMore) {
+                      if (conversations.isEmpty) {
+                        return _EmptyState(onCreateChat: _createNewChat);
+                      }
+                      return _LoadedState(
+                        conversations: conversations,
+                        isLoadingMore: isLoadingMore,
+                        hasMore: hasMore,
+                        searchQuery: _searchController.text,
+                        onLoadMore: () => conversationsNotifier.loadMore(),
+                        onRefresh: () => conversationsNotifier.loadConversations(refresh: true),
+                      );
+                    },
+                    error: (message) => _ErrorState(
+                      message: message,
+                      onRetry: () => conversationsNotifier.loadConversations(refresh: true),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: AppSpacing.xs),
-        ],
-      ),
-      body: state.when(
-        initial: () => const _LoadingState(),
-        loading: () => const _LoadingState(),
-        loaded: (conversations, total, isLoadingMore, hasMore) {
-          if (conversations.isEmpty) {
-            return _EmptyState(onCreateChat: _createNewChat);
-          }
-          return _LoadedState(
-            conversations: conversations,
-            isLoadingMore: isLoadingMore,
-            hasMore: hasMore,
-            searchQuery: _searchController.text,
-            onLoadMore: () => conversationsNotifier.loadMore(),
-            onRefresh: () => conversationsNotifier.loadConversations(refresh: true),
-          );
-        },
-        error: (message) => _ErrorState(
-          message: message,
-          onRetry: () => conversationsNotifier.loadConversations(refresh: true),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'chat_fab',
-        onPressed: _createNewChat,
-        icon: const Icon(LucideIcons.messageSquarePlus),
-        label: const Text('New Chat'),
-      ),
+          floatingActionButton: FloatingActionButton(
+            heroTag: 'chat_fab',
+            onPressed: _createNewChat,
+            child: const Icon(LucideIcons.plus),
+          ),
         );
       },
     );
@@ -157,7 +173,14 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: CircularProgressIndicator(
+        color: colorScheme.primary,
+        strokeWidth: 2,
+      ),
+    );
   }
 }
 
@@ -181,14 +204,22 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              LucideIcons.alertCircle,
-              size: 48,
-              color: colorScheme.error,
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                LucideIcons.alertCircle,
+                size: 32,
+                color: colorScheme.onErrorContainer,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Failed to load conversations',
+              'Something went wrong',
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -204,8 +235,8 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(LucideIcons.refreshCw),
-              label: const Text('Try Again'),
+              icon: const Icon(LucideIcons.refreshCw, size: 18),
+              label: const Text('Try again'),
             ),
           ],
         ),
@@ -232,18 +263,15 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
     setState(() => _isCreating = true);
     
     try {
-      // Create a quick chat conversation directly
       final notifier = ref.read(createConversationNotifierProvider);
       final conversation = await notifier.createConversation(
-        projectId: null, // Quick chat has no project
-        isSocratic: true, // Default to Socratic mode
-        initialMessage: null, // No initial message
+        projectId: null,
+        isSocratic: true,
+        initialMessage: null,
       );
 
       if (conversation != null && mounted) {
-        // Add to conversations list
         ref.read(conversationsNotifierProvider).addConversation(conversation);
-        // Navigate directly to the chat screen
         context.push('${AppRoutes.conversations}/${conversation.id}');
       }
     } finally {
@@ -264,35 +292,47 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Logo
             Container(
-              padding: const EdgeInsets.all(AppSpacing.xl),
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer.withAlpha(100),
-                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(
-                LucideIcons.messageCircle,
-                size: 48,
-                color: colorScheme.secondary,
+              child: const Icon(
+                LucideIcons.sparkles,
+                size: 40,
+                color: Colors.white,
               ),
             ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
             const SizedBox(height: AppSpacing.lg),
+
             Text(
-              'No conversations yet',
-              style: textTheme.titleLarge?.copyWith(
+              'Start a conversation',
+              style: textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ).animate().fadeIn(delay: 100.ms),
             const SizedBox(height: AppSpacing.sm),
+
             Text(
-              'Start a conversation with your AI tutor\nto begin learning.',
+              'Ask questions, explore topics, and\nlearn with your AI tutor',
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: AppSpacing.xl),
-            // Quick start button - directly creates chat and navigates
+
+            // Quick start button
             FilledButton.icon(
               onPressed: _isCreating ? null : _startQuickChat,
               icon: _isCreating 
@@ -304,15 +344,16 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
                         color: colorScheme.onPrimary,
                       ),
                     )
-                  : const Icon(LucideIcons.sparkles),
-              label: Text(_isCreating ? 'Creating...' : 'Start Quick Chat'),
+                  : const Icon(LucideIcons.sparkles, size: 18),
+              label: Text(_isCreating ? 'Starting...' : 'Start Chat'),
             ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
+
             const SizedBox(height: AppSpacing.md),
-            // Option to customize with modal
-            TextButton.icon(
+
+            // More options
+            TextButton(
               onPressed: _isCreating ? null : widget.onCreateChat,
-              icon: const Icon(LucideIcons.settings2, size: 18),
-              label: const Text('More Options'),
+              child: const Text('More options'),
             ).animate().fadeIn(delay: 400.ms),
           ],
         ),
@@ -340,7 +381,6 @@ class _LoadedState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Filter conversations based on search query
     final filteredConversations = searchQuery.isEmpty
         ? conversations
         : conversations.where((c) {
@@ -363,8 +403,10 @@ class _LoadedState extends ConsumerWidget {
         },
         child: ListView.builder(
           padding: const EdgeInsets.only(
-            top: AppSpacing.md,
-            bottom: 80, // Space for FAB
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            top: AppSpacing.sm,
+            bottom: 100, // Space for FAB
           ),
           itemCount: filteredConversations.length + (isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
@@ -372,17 +414,14 @@ class _LoadedState extends ConsumerWidget {
               return const Center(
                 child: Padding(
                   padding: EdgeInsets.all(AppSpacing.md),
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               );
             }
 
             final conversation = filteredConversations[index];
             return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: ConversationCard(
                 conversation: conversation,
                 onTap: () {
@@ -408,9 +447,9 @@ class _LoadedState extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         icon: Icon(LucideIcons.alertTriangle, color: colorScheme.error),
-        title: const Text('Delete Conversation?'),
+        title: const Text('Delete conversation?'),
         content: Text(
-          'This will permanently delete "${conversation.displayTitle}" and all its messages. This action cannot be undone.',
+          'This will permanently delete "${conversation.displayTitle}" and all messages.',
         ),
         actions: [
           TextButton(
