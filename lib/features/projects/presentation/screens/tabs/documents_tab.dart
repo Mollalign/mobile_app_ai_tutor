@@ -34,39 +34,45 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
     final documentsNotifier = ref.watch(documentsNotifierProvider(widget.projectId));
     final uploadNotifier = ref.watch(uploadStateProvider(widget.projectId));
 
-    return Scaffold(
-      body: documentsNotifier.state.when(
-        initial: () => const _LoadingState(),
-        loading: () => const _LoadingState(),
-        loaded: (documents, total, isLoadingMore, hasMore, stats) {
-          return _LoadedContent(
-            projectId: widget.projectId,
-            documents: documents,
-            stats: stats,
-            isLoadingMore: isLoadingMore,
-            hasMore: hasMore,
-            uploadState: uploadNotifier.uploads,
-            currentFilter: _currentFilter,
-            onFilterChanged: (filter) {
-              setState(() => _currentFilter = filter);
-              ref.read(documentsNotifierProvider(widget.projectId))
-                  .loadDocuments(refresh: true, status: filter.toStatus());
+    // Use AnimatedBuilder to listen to ChangeNotifier updates
+    return AnimatedBuilder(
+      animation: Listenable.merge([documentsNotifier, uploadNotifier]),
+      builder: (context, _) {
+        return Scaffold(
+          body: documentsNotifier.state.when(
+            initial: () => const _LoadingState(),
+            loading: () => const _LoadingState(),
+            loaded: (documents, total, isLoadingMore, hasMore, stats) {
+              return _LoadedContent(
+                projectId: widget.projectId,
+                documents: documents,
+                stats: stats,
+                isLoadingMore: isLoadingMore,
+                hasMore: hasMore,
+                uploadState: uploadNotifier.uploads,
+                currentFilter: _currentFilter,
+                onFilterChanged: (filter) {
+                  setState(() => _currentFilter = filter);
+                  ref.read(documentsNotifierProvider(widget.projectId))
+                      .loadDocuments(refresh: true, status: filter.toStatus());
+                },
+              );
             },
-          );
-        },
-        error: (message) => _ErrorState(
-          message: message,
-          onRetry: () => ref
-              .read(documentsNotifierProvider(widget.projectId))
-              .loadDocuments(refresh: true),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'documents_fab_${widget.projectId}',
-        onPressed: () => _pickAndUploadFiles(context, ref),
-        icon: const Icon(LucideIcons.upload),
-        label: const Text('Upload'),
-      ),
+            error: (message) => _ErrorState(
+              message: message,
+              onRetry: () => ref
+                  .read(documentsNotifierProvider(widget.projectId))
+                  .loadDocuments(refresh: true),
+            ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'documents_fab_${widget.projectId}',
+            onPressed: () => _pickAndUploadFiles(context, ref),
+            icon: const Icon(LucideIcons.upload),
+            label: const Text('Upload'),
+          ),
+        );
+      },
     );
   }
 

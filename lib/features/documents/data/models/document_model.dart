@@ -124,13 +124,17 @@ class AllowedTypesModel {
 }
 
 /// Document stats response.
+/// 
+/// Matches the backend response format:
+/// {"total":2,"by_status":{"ready":2},"by_type":{"pptx":2},"total_size":1347861}
 class DocumentStatsModel {
   final int totalDocuments;
   final int readyDocuments;
   final int pendingDocuments;
   final int processingDocuments;
   final int failedDocuments;
-  final int totalChunks;
+  final int totalSize;
+  final Map<String, int> byType;
 
   const DocumentStatsModel({
     required this.totalDocuments,
@@ -138,17 +142,26 @@ class DocumentStatsModel {
     required this.pendingDocuments,
     required this.processingDocuments,
     required this.failedDocuments,
-    required this.totalChunks,
+    required this.totalSize,
+    required this.byType,
   });
 
   factory DocumentStatsModel.fromJson(Map<String, dynamic> json) {
+    // Parse by_status map to get individual counts
+    final byStatus = json['by_status'] as Map<String, dynamic>? ?? {};
+    
+    // Parse by_type map
+    final byTypeRaw = json['by_type'] as Map<String, dynamic>? ?? {};
+    final byType = byTypeRaw.map((k, v) => MapEntry(k, v as int));
+
     return DocumentStatsModel(
-      totalDocuments: json['total_documents'] as int,
-      readyDocuments: json['ready_documents'] as int,
-      pendingDocuments: json['pending_documents'] as int,
-      processingDocuments: json['processing_documents'] as int,
-      failedDocuments: json['failed_documents'] as int,
-      totalChunks: json['total_chunks'] as int,
+      totalDocuments: (json['total'] as int?) ?? 0,
+      readyDocuments: (byStatus['ready'] as int?) ?? 0,
+      pendingDocuments: (byStatus['pending'] as int?) ?? 0,
+      processingDocuments: (byStatus['processing'] as int?) ?? 0,
+      failedDocuments: (byStatus['failed'] as int?) ?? 0,
+      totalSize: (json['total_size'] as int?) ?? 0,
+      byType: byType,
     );
   }
 }

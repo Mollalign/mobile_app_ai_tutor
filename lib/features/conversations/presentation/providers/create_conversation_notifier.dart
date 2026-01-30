@@ -11,8 +11,9 @@ import 'conversation_state.dart';
 // ============================================================
 
 /// Provider for creating conversations.
+/// NOTE: Not autoDispose to prevent disposal during async operations.
 final createConversationNotifierProvider =
-    Provider.autoDispose<CreateConversationChangeNotifier>((ref) {
+    Provider<CreateConversationChangeNotifier>((ref) {
   final repository = ref.watch(conversationRepositoryProvider);
   final notifier = CreateConversationChangeNotifier(repository: repository);
   ref.onDispose(() => notifier.dispose());
@@ -26,12 +27,25 @@ final createConversationNotifierProvider =
 /// Notifier for creating new conversations.
 class CreateConversationChangeNotifier extends ChangeNotifier {
   final ConversationRepository _repository;
+  bool _disposed = false;
 
   CreateConversationState _state = const CreateConversationState.initial();
   CreateConversationState get state => _state;
 
   CreateConversationChangeNotifier({required ConversationRepository repository})
       : _repository = repository;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotifyListeners() {
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
 
   /// Create a new conversation.
   Future<ConversationDetail?> createConversation({
@@ -41,7 +55,7 @@ class CreateConversationChangeNotifier extends ChangeNotifier {
     String? initialMessage,
   }) async {
     _state = const CreateConversationState.loading();
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final conversation = await _repository.createConversation(
@@ -52,11 +66,12 @@ class CreateConversationChangeNotifier extends ChangeNotifier {
       );
 
       _state = CreateConversationState.success(conversation: conversation);
-      notifyListeners();
+      _safeNotifyListeners();
       return conversation;
     } catch (e) {
+      debugPrint('Error in createConversation: $e');
       _state = CreateConversationState.error(message: _getErrorMessage(e));
-      notifyListeners();
+      _safeNotifyListeners();
       return null;
     }
   }
@@ -64,7 +79,7 @@ class CreateConversationChangeNotifier extends ChangeNotifier {
   /// Reset state to initial.
   void reset() {
     _state = const CreateConversationState.initial();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   String _getErrorMessage(dynamic error) {

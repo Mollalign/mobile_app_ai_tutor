@@ -33,7 +33,8 @@ class DocumentMapper {
       pendingDocuments: model.pendingDocuments,
       processingDocuments: model.processingDocuments,
       failedDocuments: model.failedDocuments,
-      totalChunks: model.totalChunks,
+      totalSize: model.totalSize,
+      byType: model.byType,
     );
   }
 }

@@ -144,7 +144,8 @@ class DocumentStats {
   final int pendingDocuments;
   final int processingDocuments;
   final int failedDocuments;
-  final int totalChunks;
+  final int totalSize;
+  final Map<String, int> byType;
 
   const DocumentStats({
     required this.totalDocuments,
@@ -152,7 +153,8 @@ class DocumentStats {
     required this.pendingDocuments,
     required this.processingDocuments,
     required this.failedDocuments,
-    required this.totalChunks,
+    required this.totalSize,
+    required this.byType,
   });
 
   static const empty = DocumentStats(
@@ -161,7 +163,8 @@ class DocumentStats {
     pendingDocuments: 0,
     processingDocuments: 0,
     failedDocuments: 0,
-    totalChunks: 0,
+    totalSize: 0,
+    byType: {},
   );
 
   /// Documents currently being processed.
@@ -172,4 +175,17 @@ class DocumentStats {
 
   /// Whether all documents are ready.
   bool get allReady => readyDocuments == totalDocuments && totalDocuments > 0;
+
+  /// Get human-readable total size.
+  String get totalSizeDisplay {
+    if (totalSize < 1024) {
+      return '$totalSize B';
+    } else if (totalSize < 1024 * 1024) {
+      return '${(totalSize / 1024).toStringAsFixed(1)} KB';
+    } else if (totalSize < 1024 * 1024 * 1024) {
+      return '${(totalSize / (1024 * 1024)).toStringAsFixed(2)} MB';
+    } else {
+      return '${(totalSize / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+    }
+  }
 }

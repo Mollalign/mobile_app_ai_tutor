@@ -142,10 +142,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 140,
+              expandedHeight: 180,
               floating: false,
               pinned: true,
               forceElevated: innerBoxIsScrolled,
+              backgroundColor: innerBoxIsScrolled ? colorScheme.surface : Colors.transparent,
+              foregroundColor: innerBoxIsScrolled ? colorScheme.onSurface : Colors.white,
               title: innerBoxIsScrolled ? Text(project.name) : null,
               actions: [
                 IconButton(
@@ -153,6 +155,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                   icon: const Icon(LucideIcons.moreVertical),
                 ),
               ],
+              iconTheme: IconThemeData(
+                color: innerBoxIsScrolled ? colorScheme.onSurface : Colors.white,
+              ),
+              actionsIconTheme: IconThemeData(
+                color: innerBoxIsScrolled ? colorScheme.onSurface : Colors.white,
+              ),
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
@@ -168,21 +176,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                   child: SafeArea(
                     bottom: false,
                     child: Padding(
+                      // Add bottom padding to account for TabBar height (~72px with icon+text)
                       padding: const EdgeInsets.fromLTRB(
                         AppSpacing.lg,
-                        AppSpacing.md,
                         AppSpacing.lg,
-                        AppSpacing.sm,
+                        AppSpacing.lg,
+                        80, // Space for TabBar
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(AppSpacing.xs),
+                                padding: const EdgeInsets.all(AppSpacing.sm),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withAlpha(50),
                                   borderRadius: AppRadius.borderRadiusSm,
@@ -191,41 +199,46 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                                   project.isArchived
                                       ? LucideIcons.archive
                                       : LucideIcons.folder,
-                                  size: 16,
+                                  size: 20,
                                   color: Colors.white,
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.sm),
-                              if (project.isArchived)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.xs,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withAlpha(30),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    'Archived',
-                                    style: textTheme.labelSmall?.copyWith(
-                                      color: Colors.white.withAlpha(200),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (project.isArchived)
+                                      Container(
+                                        margin: const EdgeInsets.only(bottom: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.sm,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha(30),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          'Archived',
+                                          style: textTheme.labelSmall?.copyWith(
+                                            color: Colors.white.withAlpha(200),
+                                          ),
+                                        ),
+                                      ),
+                                    Text(
+                                      project.name,
+                                      style: textTheme.headlineSmall?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
+                                  ],
                                 ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Flexible(
-                            child: Text(
-                              project.name,
-                              style: textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            ],
                           ),
                         ],
                       ),

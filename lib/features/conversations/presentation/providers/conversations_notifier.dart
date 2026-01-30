@@ -56,7 +56,10 @@ class ConversationsChangeNotifier extends ChangeNotifier {
     required ConversationRepository repository,
     String? projectId,
   })  : _repository = repository,
-        _projectId = projectId;
+        _projectId = projectId {
+    // Auto-load conversations when notifier is created
+    loadConversations();
+  }
 
   @override
   void dispose() {
@@ -202,6 +205,15 @@ class ConversationsChangeNotifier extends ChangeNotifier {
       _state = currentState.copyWith(
         conversations: [conversation, ...currentState.conversations],
         total: currentState.total + 1,
+      );
+      notifyListeners();
+    } else {
+      // If not loaded yet, create a new loaded state with just this conversation
+      _state = ConversationsState.loaded(
+        conversations: [conversation],
+        total: 1,
+        hasMore: false,
+        isLoadingMore: false,
       );
       notifyListeners();
     }

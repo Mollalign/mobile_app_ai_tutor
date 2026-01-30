@@ -165,9 +165,16 @@ class ConversationRemoteDataSource {
 
       final stream = response.data!.stream;
       String buffer = '';
+      int rawChunkCount = 0;
 
+      debugPrint('SSE: Stream started');
+      
       await for (final chunk in stream) {
-        buffer += utf8.decode(chunk);
+        rawChunkCount++;
+        final decoded = utf8.decode(chunk);
+        buffer += decoded;
+        debugPrint('SSE: Raw chunk #$rawChunkCount received, ${decoded.length} bytes');
+        debugPrint('SSE: Raw content: ${decoded.substring(0, decoded.length > 100 ? 100 : decoded.length)}...');
         
         // Process complete SSE events (split by double newline)
         final events = buffer.split('\n\n');
@@ -175,20 +182,27 @@ class ConversationRemoteDataSource {
         // Keep incomplete event in buffer
         buffer = events.removeLast();
         
+        debugPrint('SSE: Found ${events.length} complete events in buffer');
+        
         for (final event in events) {
           if (event.trim().isEmpty) continue;
           
+          debugPrint('SSE: Parsing event: ${event.substring(0, event.length > 80 ? 80 : event.length)}...');
           final parsed = _parseSSEEvent(event);
           if (parsed != null) {
+            debugPrint('SSE: Parsed event type: ${parsed.type}');
             yield parsed;
           }
         }
       }
       
+      debugPrint('SSE: Stream ended, processing remaining buffer: ${buffer.length} bytes');
+      
       // Process any remaining buffer
       if (buffer.trim().isNotEmpty) {
         final parsed = _parseSSEEvent(buffer);
         if (parsed != null) {
+          debugPrint('SSE: Final parsed event type: ${parsed.type}');
           yield parsed;
         }
       }

@@ -24,21 +24,63 @@ class ConversationsTab extends ConsumerStatefulWidget {
 }
 
 class _ConversationsTabState extends ConsumerState<ConversationsTab> {
-  Future<void> _createNewChat() async {
-    // Create conversation directly for this project
-    final notifier = ref.read(createConversationNotifierProvider);
-    final conversation = await notifier.createConversation(
-      projectId: widget.projectId,
-      isSocratic: true, // Default to Socratic mode
-    );
+  bool _isCreating = false;
 
-    if (conversation != null && mounted) {
-      // Add to project conversations list
-      ref
-          .read(projectConversationsNotifierProvider(widget.projectId))
-          .addConversation(conversation);
-      // Navigate to chat
-      context.push('${AppRoutes.conversations}/${conversation.id}');
+  Future<void> _createNewChat() async {
+    if (_isCreating) return; // Prevent double-tap
+    
+    setState(() => _isCreating = true);
+    debugPrint('Creating new chat for project: ${widget.projectId}');
+
+    try {
+      // Create conversation directly for this project
+      final notifier = ref.read(createConversationNotifierProvider);
+      final conversation = await notifier.createConversation(
+        projectId: widget.projectId,
+        isSocratic: true, // Default to Socratic mode
+      );
+
+      debugPrint('Conversation created: ${conversation?.id}');
+
+      if (conversation != null && mounted) {
+        // Add to project conversations list
+        ref
+            .read(projectConversationsNotifierProvider(widget.projectId))
+            .addConversation(conversation);
+        debugPrint('Navigating to chat: ${AppRoutes.conversations}/${conversation.id}');
+        // Navigate to chat
+        context.push('${AppRoutes.conversations}/${conversation.id}');
+      } else if (mounted) {
+        // Show error if conversation creation failed
+        final errorMessage = notifier.state.maybeMap(
+          error: (state) => state.message,
+          orElse: () => 'Failed to create conversation',
+        );
+        debugPrint('Failed to create conversation: $errorMessage');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error creating chat: $e');
+      debugPrint('Stack trace: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
     }
   }
 
@@ -47,40 +89,52 @@ class _ConversationsTabState extends ConsumerState<ConversationsTab> {
     final conversationsNotifier =
         ref.watch(projectConversationsNotifierProvider(widget.projectId));
 
-    return Scaffold(
-      body: conversationsNotifier.state.when(
-        initial: () => const _LoadingState(),
-        loading: () => const _LoadingState(),
-        loaded: (conversations, total, isLoadingMore, hasMore) {
-          if (conversations.isEmpty) {
-            return _EmptyState(onCreateChat: _createNewChat);
-          }
-          return _LoadedState(
-            projectId: widget.projectId,
-            conversations: conversations,
-            isLoadingMore: isLoadingMore,
-            hasMore: hasMore,
-            onLoadMore: () => ref
-                .read(projectConversationsNotifierProvider(widget.projectId))
-                .loadMore(),
-            onRefresh: () => ref
-                .read(projectConversationsNotifierProvider(widget.projectId))
-                .loadConversations(refresh: true),
-          );
-        },
-        error: (message) => _ErrorState(
-          message: message,
-          onRetry: () => ref
-              .read(projectConversationsNotifierProvider(widget.projectId))
-              .loadConversations(refresh: true),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'conversations_fab_${widget.projectId}',
-        onPressed: _createNewChat,
-        icon: const Icon(LucideIcons.messageSquarePlus),
-        label: const Text('New Chat'),
-      ),
+    // Use AnimatedBuilder to listen to ChangeNotifier updates
+    return AnimatedBuilder(
+      animation: conversationsNotifier,
+      builder: (context, _) {
+        return Scaffold(
+          body: conversationsNotifier.state.when(
+            initial: () => const _LoadingState(),
+            loading: () => const _LoadingState(),
+            loaded: (conversations, total, isLoadingMore, hasMore) {
+              if (conversations.isEmpty) {
+                return _EmptyState(onCreateChat: _createNewChat);
+              }
+              return _LoadedState(
+                projectId: widget.projectId,
+                conversations: conversations,
+                isLoadingMore: isLoadingMore,
+                hasMore: hasMore,
+                onLoadMore: () => ref
+                    .read(projectConversationsNotifierProvider(widget.projectId))
+                    .loadMore(),
+                onRefresh: () => ref
+                    .read(projectConversationsNotifierProvider(widget.projectId))
+                    .loadConversations(refresh: true),
+              );
+            },
+            error: (message) => _ErrorState(
+              message: message,
+              onRetry: () => ref
+                  .read(projectConversationsNotifierProvider(widget.projectId))
+                  .loadConversations(refresh: true),
+            ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'conversations_fab_${widget.projectId}',
+            onPressed: _isCreating ? null : _createNewChat,
+            icon: _isCreating 
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(LucideIcons.messageSquarePlus),
+            label: Text(_isCreating ? 'Creating...' : 'New Chat'),
+          ),
+        );
+      },
     );
   }
 }

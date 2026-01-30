@@ -59,16 +59,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           initial: () {
             SchedulerBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
+                debugPrint('ChatScreen: Loading chat...');
                 chatNotifier.loadChat();
               }
             });
           },
         );
 
-        // Scroll to bottom when new messages arrive
+        // Scroll to bottom when new messages arrive or during streaming
         if (chatState is ChatLoaded) {
-          if (chatState.messages.length > _lastMessageCount) {
-            _lastMessageCount = chatState.messages.length;
+          // Debug: Log streaming state
+          if (chatState.isStreaming) {
+            debugPrint('ChatScreen: Streaming - content length: ${chatState.streamingContent?.length ?? 0}');
+          }
+          
+          if (chatState.messages.length > _lastMessageCount || chatState.isStreaming) {
+            if (chatState.messages.length > _lastMessageCount) {
+              _lastMessageCount = chatState.messages.length;
+            }
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 _scrollToBottom();
@@ -81,6 +89,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           initial: () => _buildLoadingScaffold(context),
           loading: () => _buildLoadingScaffold(context),
           loaded: (conversation, messages, isSending, isStreaming, streamingContent, pendingSources) {
+            debugPrint('ChatScreen: Loaded - messages: ${messages.length}, streaming: $isStreaming');
             return _buildLoadedScaffold(
               context,
               conversation,
@@ -260,7 +269,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
+                      // Use ValueKey with content length to force rebuild during streaming
                       return MessageBubble(
+                        key: ValueKey('${message.id}-${message.content.length}'),
                         message: message,
                       );
                     },

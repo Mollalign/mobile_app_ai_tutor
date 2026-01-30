@@ -1,9 +1,16 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart' as picker;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../../app/router.dart';
 import '../../../../../core/constants/app_spacing.dart';
+import '../../../../conversations/presentation/providers/providers.dart';
+import '../../../../documents/presentation/providers/providers.dart';
 import '../../../domain/entities/entities.dart';
 
 /// Overview tab showing project information and stats.
@@ -20,122 +27,187 @@ class OverviewTab extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        // Description Card
-        if (project.hasDescription) ...[
-          _buildSectionTitle(context, 'Description'),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: AppRadius.borderRadiusMd,
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: Text(
-              project.description ?? '',
-              style: textTheme.bodyMedium,
-            ),
-          ).animate().fadeIn(delay: 100.ms),
-          const SizedBox(height: AppSpacing.xl),
-        ],
+    // Watch the notifiers
+    final documentsNotifier = ref.watch(documentsNotifierProvider(project.id));
+    final conversationsNotifier = ref.watch(projectConversationsNotifierProvider(project.id));
 
-        // Stats Section
-        _buildSectionTitle(context, 'Statistics'),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
+    // Use AnimatedBuilder to listen to ChangeNotifier updates
+    return AnimatedBuilder(
+      animation: Listenable.merge([documentsNotifier, conversationsNotifier]),
+      builder: (context, _) {
+        // Extract counts from state
+        final documentCount = documentsNotifier.state.maybeMap(
+          loaded: (state) => state.total.toString(),
+          orElse: () => '...',
+        );
+        
+        final conversationCount = conversationsNotifier.state.maybeMap(
+          loaded: (state) => state.total.toString(),
+          orElse: () => '...',
+        );
+
+        return ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            Expanded(
-              child: _StatCard(
-                icon: LucideIcons.fileText,
-                label: 'Documents',
-                value: '0', // Will be replaced with actual data
-                color: colorScheme.primary,
-              ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.1),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _StatCard(
-                icon: LucideIcons.messageSquare,
-                label: 'Conversations',
-                value: '0', // Will be replaced with actual data
-                color: colorScheme.secondary,
-              ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xl),
-
-        // Details Section
-        _buildSectionTitle(context, 'Details'),
-        const SizedBox(height: AppSpacing.sm),
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            borderRadius: AppRadius.borderRadiusMd,
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              _DetailRow(
-                icon: LucideIcons.calendar,
-                label: 'Created',
-                value: _formatDate(project.createdAt),
-              ),
-              Divider(height: 1, color: colorScheme.outlineVariant),
-              _DetailRow(
-                icon: LucideIcons.clock,
-                label: 'Last Updated',
-                value: project.lastUpdatedRelative,
-              ),
-              Divider(height: 1, color: colorScheme.outlineVariant),
-              _DetailRow(
-                icon: project.isArchived ? LucideIcons.archive : LucideIcons.folderOpen,
-                label: 'Status',
-                value: project.isArchived ? 'Archived' : 'Active',
-                valueColor: project.isArchived 
-                    ? colorScheme.onSurfaceVariant 
-                    : colorScheme.primary,
-              ),
+            // Description Card
+            if (project.hasDescription) ...[
+              _buildSectionTitle(context, 'Description'),
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: AppRadius.borderRadiusMd,
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: Text(
+                  project.description ?? '',
+                  style: textTheme.bodyMedium,
+                ),
+              ).animate().fadeIn(delay: 100.ms),
+              const SizedBox(height: AppSpacing.xl),
             ],
-          ),
-        ).animate().fadeIn(delay: 250.ms),
-        
-        const SizedBox(height: AppSpacing.xl),
 
-        // Quick Actions
-        _buildSectionTitle(context, 'Quick Actions'),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickActionButton(
-                icon: LucideIcons.upload,
-                label: 'Upload\nDocument',
-                onTap: () {
-                  // TODO: Open upload dialog
-                },
-              ).animate().fadeIn(delay: 300.ms),
+            // Stats Section
+            _buildSectionTitle(context, 'Statistics'),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: LucideIcons.fileText,
+                    label: 'Documents',
+                    value: documentCount,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _StatCard(
+                    icon: LucideIcons.messageSquare,
+                    label: 'Conversations',
+                    value: conversationCount,
+                    color: colorScheme.secondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _QuickActionButton(
-                icon: LucideIcons.messageSquarePlus,
-                label: 'Start\nConversation',
-                onTap: () {
-                  // TODO: Start new conversation
-                },
-              ).animate().fadeIn(delay: 350.ms),
+            const SizedBox(height: AppSpacing.xl),
+
+            // Details Section
+            _buildSectionTitle(context, 'Details'),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: AppRadius.borderRadiusMd,
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Column(
+                children: [
+                  _DetailRow(
+                    icon: LucideIcons.calendar,
+                    label: 'Created',
+                    value: _formatDate(project.createdAt),
+                  ),
+                  Divider(height: 1, color: colorScheme.outlineVariant),
+                  _DetailRow(
+                    icon: LucideIcons.clock,
+                    label: 'Last Updated',
+                    value: project.lastUpdatedRelative,
+                  ),
+                  Divider(height: 1, color: colorScheme.outlineVariant),
+                  _DetailRow(
+                    icon: project.isArchived ? LucideIcons.archive : LucideIcons.folderOpen,
+                    label: 'Status',
+                    value: project.isArchived ? 'Archived' : 'Active',
+                    valueColor: project.isArchived 
+                        ? colorScheme.onSurfaceVariant 
+                        : colorScheme.primary,
+                  ),
+                ],
+              ),
             ),
+            
+            const SizedBox(height: AppSpacing.xl),
+
+            // Quick Actions
+            _buildSectionTitle(context, 'Quick Actions'),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: LucideIcons.upload,
+                    label: 'Upload\nDocument',
+                    onTap: () => _pickAndUploadFiles(context, ref),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: LucideIcons.messageSquarePlus,
+                    label: 'Start\nConversation',
+                    onTap: () => _createNewChat(context, ref),
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: AppSpacing.xxl),
           ],
-        ),
-        
-        const SizedBox(height: AppSpacing.xxl),
-      ],
+        );
+      },
     );
+  }
+
+  Future<void> _pickAndUploadFiles(BuildContext context, WidgetRef ref) async {
+    final result = await picker.FilePicker.platform.pickFiles(
+      type: picker.FileType.custom,
+      allowedExtensions: ['pdf', 'docx', 'pptx', 'txt'],
+      allowMultiple: true,
+      withData: true,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final uploadNotifier = ref.read(uploadStateProvider(project.id));
+
+      for (final file in result.files) {
+        if (file.path != null) {
+          uploadNotifier.uploadFile(File(file.path!));
+        } else if (file.bytes != null) {
+          uploadNotifier.uploadBytes(file.bytes!, file.name);
+        }
+      }
+
+      // Show feedback
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Uploading ${result.files.length} file(s)...'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _createNewChat(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(createConversationNotifierProvider);
+    final conversation = await notifier.createConversation(
+      projectId: project.id,
+      isSocratic: true,
+    );
+
+    if (conversation != null && context.mounted) {
+      // Add to project conversations list
+      ref
+          .read(projectConversationsNotifierProvider(project.id))
+          .addConversation(conversation);
+      // Navigate to chat
+      context.push('${AppRoutes.conversations}/${conversation.id}');
+    }
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {

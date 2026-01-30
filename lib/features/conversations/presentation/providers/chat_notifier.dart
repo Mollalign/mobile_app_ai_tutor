@@ -61,6 +61,14 @@ class ChatChangeNotifier extends ChangeNotifier {
   @override
   void notifyListeners() {
     if (_disposed) return;
+    // Always notify immediately - streaming needs real-time updates
+    super.notifyListeners();
+  }
+  
+  /// Safely notify listeners, deferring if during build phase.
+  /// Use this for non-streaming updates.
+  void _safeNotifyListeners() {
+    if (_disposed) return;
 
     final phase = SchedulerBinding.instance.schedulerPhase;
     final shouldDefer = phase != SchedulerPhase.idle;
@@ -80,7 +88,7 @@ class ChatChangeNotifier extends ChangeNotifier {
   /// Load the conversation with messages.
   Future<void> loadChat() async {
     _state = const ChatState.loading();
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       debugPrint('Loading chat: conversationId=$_conversationId');
@@ -103,7 +111,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       debugPrint('Stack trace: $stackTrace');
       _state = ChatState.error(message: _getErrorMessage(e));
     } finally {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -123,7 +131,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       messages: [...currentState.messages, userMessage],
       isSending: true,
     );
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final response = await _repository.sendMessage(
@@ -156,14 +164,22 @@ class ChatChangeNotifier extends ChangeNotifier {
       );
     }
 
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Send a message with streaming response.
   Future<void> sendMessageStreaming(String content) async {
-    if (_state is! ChatLoaded) return;
+    if (_state is! ChatLoaded) {
+      debugPrint('Cannot send message: state is not ChatLoaded');
+      return;
+    }
     final currentState = _state as ChatLoaded;
-    if (currentState.isSending || currentState.isStreaming) return;
+    if (currentState.isSending || currentState.isStreaming) {
+      debugPrint('Cannot send message: already sending or streaming');
+      return;
+    }
+
+    debugPrint('Starting streaming message: $content');
 
     // Cancel any existing stream
     await _streamSubscription?.cancel();
@@ -199,8 +215,11 @@ class ChatChangeNotifier extends ChangeNotifier {
     )
         .listen(
       (chunk) {
+        if (_disposed) return;
         if (_state is! ChatLoaded) return;
         final loadedState = _state as ChatLoaded;
+
+        debugPrint('Received chunk: type=${chunk.type}');
 
         if (chunk.hasSources && chunk.sources != null) {
           sources = chunk.sources!
@@ -210,6 +229,7 @@ class ChatChangeNotifier extends ChangeNotifier {
           notifyListeners();
         } else if (chunk.isContent && chunk.content != null) {
           accumulatedContent += chunk.content!;
+          debugPrint('Content accumulated: ${accumulatedContent.length} chars');
 
           // Update the streaming message content
           final messages = loadedState.messages.map((m) {
@@ -225,16 +245,20 @@ class ChatChangeNotifier extends ChangeNotifier {
           );
           notifyListeners();
         } else if (chunk.isDone) {
+          debugPrint('Stream done, messageId=${chunk.messageId}');
           finalMessageId = chunk.messageId;
           _finishStreaming(finalMessageId, accumulatedContent, sources);
         } else if (chunk.isError) {
+          debugPrint('Stream error: ${chunk.error}');
           _handleStreamError(chunk.error ?? 'Unknown error');
         }
       },
       onError: (error) {
+        debugPrint('Stream subscription error: $error');
         _handleStreamError(_getErrorMessage(error));
       },
       onDone: () {
+        debugPrint('Stream subscription done');
         // If we haven't received a done event, finish anyway
         if (_state is ChatLoaded) {
           final loadedState = _state as ChatLoaded;
@@ -319,7 +343,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       );
 
       _state = currentState.copyWith(conversation: updatedConversation);
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       // Handle error
     }
@@ -352,7 +376,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       );
 
       _state = currentState.copyWith(conversation: updatedConversation);
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       // Handle error
     }

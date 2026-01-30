@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/repositories.dart';
@@ -51,6 +52,7 @@ final uploadStateProvider = uploadNotifierProvider;
 class DocumentsChangeNotifier extends ChangeNotifier {
   final DocumentRepository _repository;
   final String projectId;
+  bool _disposed = false;
   
   static const int _pageSize = 20;
   int _currentOffset = 0;
@@ -63,6 +65,31 @@ class DocumentsChangeNotifier extends ChangeNotifier {
     required this.projectId,
   }) : _repository = repository {
     loadDocuments();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer = phase != SchedulerPhase.idle;
+
+    if (shouldDefer) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) {
+          super.notifyListeners();
+        }
+      });
+      return;
+    }
+
+    super.notifyListeners();
   }
 
   /// Load documents with optional filter.
@@ -211,6 +238,7 @@ class UploadChangeNotifier extends ChangeNotifier {
   final DocumentRepository _repository;
   final String projectId;
   final VoidCallback? onUploadComplete;
+  bool _disposed = false;
   
   final Map<String, CancelToken> _cancelTokens = {};
   
@@ -222,6 +250,36 @@ class UploadChangeNotifier extends ChangeNotifier {
     required this.projectId,
     this.onUploadComplete,
   }) : _repository = repository;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    // Cancel all pending uploads
+    for (final token in _cancelTokens.values) {
+      token.cancel();
+    }
+    _cancelTokens.clear();
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final shouldDefer = phase != SchedulerPhase.idle;
+
+    if (shouldDefer) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) {
+          super.notifyListeners();
+        }
+      });
+      return;
+    }
+
+    super.notifyListeners();
+  }
 
   /// Upload a file.
   Future<void> uploadFile(File file) async {
