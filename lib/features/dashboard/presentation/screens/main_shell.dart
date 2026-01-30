@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../providers/providers.dart';
 import 'home_tab.dart';
 import 'projects_tab.dart';
 import 'chat_tab.dart';
@@ -11,48 +12,44 @@ import 'profile_tab.dart';
 /// 
 /// This is the primary scaffold that contains all authenticated screens.
 /// Uses IndexedStack to preserve state when switching tabs.
-class MainShell extends ConsumerStatefulWidget {
+class MainShell extends ConsumerWidget {
   const MainShell({super.key});
 
   @override
-  ConsumerState<MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends ConsumerState<MainShell> {
-  int _currentIndex = 0;
-
-  // Tabs are kept in memory via IndexedStack to preserve state
-  final List<Widget> _tabs = const [
-    HomeTab(),
-    ProjectsTab(),
-    ChatTab(),
-    ProfileTab(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentIndex = ref.watch(tabControllerProvider);
+
+    // Tabs are kept in memory via IndexedStack to preserve state
+    const tabs = [
+      HomeTab(),
+      ProjectsTab(),
+      ChatTab(),
+      ProfileTab(),
+    ];
 
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
-        children: _tabs,
+        index: currentIndex,
+        children: tabs,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
+          color: colorScheme.surface,
           border: Border(
             top: BorderSide(
-              color: colorScheme.outlineVariant,
+              color: isDark 
+                  ? colorScheme.outlineVariant.withAlpha(51)
+                  : colorScheme.outlineVariant,
               width: 0.5,
             ),
           ),
         ),
         child: NavigationBar(
-          selectedIndex: _currentIndex,
+          selectedIndex: currentIndex,
           onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
+            ref.read(tabControllerProvider.notifier).setTab(index);
           },
           destinations: const [
             NavigationDestination(

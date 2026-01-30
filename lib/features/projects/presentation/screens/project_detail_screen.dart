@@ -173,76 +173,100 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                       ],
                     ),
                   ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      // Add bottom padding to account for TabBar height (~72px with icon+text)
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        AppSpacing.lg,
-                        AppSpacing.lg,
-                        80, // Space for TabBar
+                  child: Stack(
+                    children: [
+                      // Scrim gradient at the top for better icon visibility
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 120,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withAlpha(77),  // ~30% opacity
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
+                      // Content
+                      SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          // Add bottom padding to account for TabBar height (~72px with icon+text)
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            80, // Space for TabBar
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(AppSpacing.sm),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(50),
-                                  borderRadius: AppRadius.borderRadiusSm,
-                                ),
-                                child: Icon(
-                                  project.isArchived
-                                      ? LucideIcons.archive
-                                      : LucideIcons.folder,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (project.isArchived)
-                                      Container(
-                                        margin: const EdgeInsets.only(bottom: 4),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.sm,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withAlpha(30),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'Archived',
-                                          style: textTheme.labelSmall?.copyWith(
-                                            color: Colors.white.withAlpha(200),
-                                          ),
-                                        ),
-                                      ),
-                                    Text(
-                                      project.name,
-                                      style: textTheme.headlineSmall?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(AppSpacing.sm),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha(50),
+                                      borderRadius: AppRadius.borderRadiusSm,
                                     ),
-                                  ],
-                                ),
+                                    child: Icon(
+                                      project.isArchived
+                                          ? LucideIcons.archive
+                                          : LucideIcons.folder,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (project.isArchived)
+                                          Container(
+                                            margin: const EdgeInsets.only(bottom: 4),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: AppSpacing.sm,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withAlpha(30),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              'Archived',
+                                              style: textTheme.labelSmall?.copyWith(
+                                                color: Colors.white.withAlpha(200),
+                                              ),
+                                            ),
+                                          ),
+                                        Text(
+                                          project.name,
+                                          style: textTheme.headlineSmall?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),

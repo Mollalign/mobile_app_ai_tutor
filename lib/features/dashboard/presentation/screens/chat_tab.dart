@@ -88,20 +88,20 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                     children: [
                       Expanded(
                         child: _isSearching
-                            ? TextField(
-                                controller: _searchController,
-                                autofocus: true,
-                                decoration: InputDecoration(
-                                  hintText: 'Search conversations...',
-                                  hintStyle: textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  border: InputBorder.none,
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search conversations...',
+                  hintStyle: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
-                                ),
-                                style: textTheme.bodyMedium,
+                ),
+                style: textTheme.bodyMedium,
                                 onChanged: (value) => setState(() {}),
-                              )
+              )
                             : Text(
                                 'Chats',
                                 style: textTheme.headlineMedium?.copyWith(
@@ -109,55 +109,55 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                                 ),
                               ),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _isSearching = !_isSearching;
-                            if (!_isSearching) {
-                              _searchController.clear();
-                            }
-                          });
-                        },
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                }
+              });
+            },
                         icon: Icon(
                           _isSearching ? LucideIcons.x : LucideIcons.search,
-                        ),
+          ),
                       ),
-                    ],
-                  ),
+        ],
+      ),
                 ),
 
                 // Content
                 Expanded(
                   child: state.when(
-                    initial: () => const _LoadingState(),
-                    loading: () => const _LoadingState(),
-                    loaded: (conversations, total, isLoadingMore, hasMore) {
-                      if (conversations.isEmpty) {
-                        return _EmptyState(onCreateChat: _createNewChat);
-                      }
-                      return _LoadedState(
-                        conversations: conversations,
-                        isLoadingMore: isLoadingMore,
-                        hasMore: hasMore,
-                        searchQuery: _searchController.text,
-                        onLoadMore: () => conversationsNotifier.loadMore(),
-                        onRefresh: () => conversationsNotifier.loadConversations(refresh: true),
-                      );
-                    },
-                    error: (message) => _ErrorState(
-                      message: message,
-                      onRetry: () => conversationsNotifier.loadConversations(refresh: true),
-                    ),
-                  ),
+        initial: () => const _LoadingState(),
+        loading: () => const _LoadingState(),
+        loaded: (conversations, total, isLoadingMore, hasMore) {
+          if (conversations.isEmpty) {
+            return _EmptyState(onCreateChat: _createNewChat);
+          }
+          return _LoadedState(
+            conversations: conversations,
+            isLoadingMore: isLoadingMore,
+            hasMore: hasMore,
+            searchQuery: _searchController.text,
+            onLoadMore: () => conversationsNotifier.loadMore(),
+            onRefresh: () => conversationsNotifier.loadConversations(refresh: true),
+          );
+        },
+        error: (message) => _ErrorState(
+          message: message,
+          onRetry: () => conversationsNotifier.loadConversations(refresh: true),
+        ),
+      ),
                 ),
               ],
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            heroTag: 'chat_fab',
-            onPressed: _createNewChat,
+        heroTag: 'chat_fab',
+        onPressed: _createNewChat,
             child: const Icon(LucideIcons.plus),
-          ),
+      ),
         );
       },
     );
@@ -212,7 +212,7 @@ class _ErrorState extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                LucideIcons.alertCircle,
+              LucideIcons.alertCircle,
                 size: 32,
                 color: colorScheme.onErrorContainer,
               ),

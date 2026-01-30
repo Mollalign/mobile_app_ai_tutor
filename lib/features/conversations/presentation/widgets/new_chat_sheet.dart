@@ -132,7 +132,7 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
               _ModeToggle(
                 isSocratic: _isSocratic,
                 onChanged: (value) => setState(() => _isSocratic = value),
-              ),
+                ),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -185,19 +185,19 @@ class _TypeOption extends StatelessWidget {
           : colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
-        onTap: onTap,
+      onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(
+          border: Border.all(
               color: isSelected ? color : Colors.transparent,
               width: 2,
-            ),
           ),
-          child: Column(
-            children: [
+        ),
+        child: Column(
+          children: [
               Container(
                 width: 48,
                 height: 48,
@@ -210,19 +210,19 @@ class _TypeOption extends StatelessWidget {
                   size: 24,
                   color: color,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
                 title,
-                style: textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
                   color: isSelected ? color : colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
+            Text(
                 subtitle,
-                style: textTheme.bodySmall?.copyWith(
+              style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -344,9 +344,9 @@ class _ModeButton extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
               ),
-            ],
+            ),
+          ],
           ),
         ),
       ),
@@ -376,28 +376,28 @@ class _ProjectSelector extends ConsumerWidget {
       loaded: (projects, isLoadingMore, hasMore) {
         if (projects.isEmpty) {
           return Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  LucideIcons.info,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
+              child: Row(
+                children: [
+                  Icon(
+                    LucideIcons.info,
+                    color: colorScheme.onSurfaceVariant,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
                     'No projects yet. Create one first.',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
             ),
           );
         }
@@ -428,33 +428,33 @@ class _ProjectSelector extends ConsumerWidget {
         );
       },
       error: (message) => Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: colorScheme.errorContainer.withAlpha(51),
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        child: Row(
-          children: [
-            Icon(
-              LucideIcons.alertCircle,
-              color: colorScheme.error,
-              size: 20,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                'Failed to load projects',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.error,
+          child: Row(
+            children: [
+              Icon(
+                LucideIcons.alertCircle,
+                color: colorScheme.error,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Failed to load projects',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.error,
+                  ),
                 ),
               ),
-            ),
             TextButton(
               onPressed: () {
                 ref.read(projectsNotifierProvider.notifier).loadProjects(refresh: true);
               },
               child: const Text('Retry'),
-            ),
+          ),
           ],
         ),
       ),

@@ -5,26 +5,15 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
-import '../../../../core/constants/app_spacing.dart';
+import '../../../../app/theme_provider.dart';
 import '../../../auth/presentation/providers/providers.dart';
 import '../../../conversations/presentation/providers/providers.dart';
 import '../../../conversations/presentation/widgets/widgets.dart';
 import '../providers/providers.dart';
-import '../widgets/quick_action_card.dart';
-import '../widgets/recent_conversations_section.dart';
-import '../widgets/projects_overview_section.dart';
-import '../widgets/stats_card.dart';
 import '../../../projects/presentation/providers/providers.dart';
 import '../../../projects/presentation/widgets/create_project_sheet.dart';
 
-/// Home tab - the main dashboard view.
-/// 
-/// Shows:
-/// - Welcome header with user name
-/// - Quick action buttons (New Project, Quick Chat)
-/// - Learning stats (real data)
-/// - Recent conversations (real data)
-/// - Projects overview (real data)
+/// Home tab - Modern dashboard with real data.
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
@@ -34,7 +23,6 @@ class HomeTab extends ConsumerStatefulWidget {
 
 class _HomeTabState extends ConsumerState<HomeTab> {
   Future<void> _onRefresh() async {
-    // Refresh both projects and conversations
     await Future.wait([
       ref.read(projectsNotifierProvider.notifier).loadProjects(refresh: true),
       ref.read(conversationsNotifierProvider).loadConversations(refresh: true),
@@ -46,6 +34,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final authState = ref.watch(authNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final stats = ref.watch(dashboardStatsProvider);
 
     final user = authState.whenOrNull(
@@ -53,107 +42,132 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     );
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
+        color: colorScheme.primary,
         child: CustomScrollView(
           slivers: [
-          // Custom App Bar
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              expandedTitleScale: 1.0,
-              titlePadding: const EdgeInsets.only(
-                left: AppSpacing.lg,
-                bottom: AppSpacing.md,
+            // Modern App Bar
+            SliverAppBar(
+              expandedHeight: 70,
+              floating: true,
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                expandedTitleScale: 1.0,
+                titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                title: Row(
+                  children: [
+                    // Logo with gradient
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.secondary,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: isDark
+                            ? [
+                                BoxShadow(
+                                  color: colorScheme.primary.withAlpha(51),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: const Icon(
+                        LucideIcons.sparkles,
+                        size: 22,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'AI Tutor',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              title: Row(
-                children: [
-                  // App logo
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: AppRadius.borderRadiusMd,
-                    ),
-                    child: Icon(
-                      LucideIcons.graduationCap,
-                      size: 20,
-                      color: colorScheme.primary,
-                    ),
+              actions: [
+                _ThemeToggleButton(),
+                const SizedBox(width: 8),
+              ],
+            ),
+
+            // Content
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Welcome Section
+                  _WelcomeCard(userName: user?.firstName ?? 'Scholar'),
+                  const SizedBox(height: 24),
+
+                  // Quick Actions
+                  _QuickActionsSection(ref: ref),
+                  const SizedBox(height: 28),
+
+                  // Stats Section
+                  _StatsSection(stats: stats),
+                  const SizedBox(height: 28),
+
+                  // Recent Conversations
+                  _RecentSection(
+                    title: 'Recent Conversations',
+                    onViewAll: () {
+                      ref.read(tabControllerProvider.notifier).goToChats();
+                    },
+                    child: const _RecentConversationsList(),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'AI Tutor',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  const SizedBox(height: 28),
+
+                  // Projects Overview
+                  _RecentSection(
+                    title: 'Your Projects',
+                    onViewAll: () {
+                      ref.read(tabControllerProvider.notifier).goToProjects();
+                    },
+                    child: const _ProjectsList(),
                   ),
-                ],
+                ]),
               ),
             ),
-            actions: [
-              IconButton(
-                onPressed: () {
-                  // TODO: Notifications
-                },
-                icon: const Icon(LucideIcons.bell),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-            ],
-          ),
-
-          // Content
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Welcome Section
-                _buildWelcomeSection(context, user?.firstName ?? 'Scholar'),
-                
-                const SizedBox(height: AppSpacing.xl),
-
-                // Quick Actions
-                _buildQuickActionsSection(context, ref),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Stats Cards
-                _buildStatsSection(context, stats),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Recent Conversations
-                const RecentConversationsSection(),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Projects Overview
-                const ProjectsOverviewSection(),
-
-                // Bottom padding for safe area
-                const SizedBox(height: AppSpacing.xl),
-              ]),
-            ),
-          ),
-        ],
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildWelcomeSection(BuildContext context, String userName) {
+/// Welcome card with gradient and greeting.
+class _WelcomeCard extends StatelessWidget {
+  final String userName;
+
+  const _WelcomeCard({required this.userName});
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Get greeting based on time of day
     final hour = DateTime.now().hour;
     String greeting;
     IconData greetingIcon;
-    
+
     if (hour < 12) {
       greeting = 'Good morning';
       greetingIcon = LucideIcons.sunrise;
@@ -166,21 +180,21 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withAlpha(200),
+            Color.lerp(colorScheme.primary, colorScheme.secondary, 0.5)!,
           ],
         ),
-        borderRadius: AppRadius.borderRadiusLg,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withAlpha(50),
-            blurRadius: 20,
+            color: colorScheme.primary.withAlpha(isDark ? 77 : 51),
+            blurRadius: 24,
             offset: const Offset(0, 8),
           ),
         ],
@@ -192,39 +206,48 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             children: [
               Icon(
                 greetingIcon,
-                color: Colors.white.withAlpha(200),
-                size: 20,
+                color: Colors.white.withAlpha(204),
+                size: 18,
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: 8),
               Text(
                 greeting,
                 style: textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withAlpha(200),
+                  color: Colors.white.withAlpha(204),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: 8),
           Text(
             userName,
             style: textTheme.headlineMedium?.copyWith(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 8),
           Text(
-            'Ready to continue your learning journey?',
+            'What would you like to learn today?',
             style: textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withAlpha(180),
+              color: Colors.white.withAlpha(179),
             ),
           ),
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
+}
 
-  Widget _buildQuickActionsSection(BuildContext context, WidgetRef ref) {
+/// Quick actions section with modern cards.
+class _QuickActionsSection extends StatelessWidget {
+  final WidgetRef ref;
+
+  const _QuickActionsSection({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -237,27 +260,24 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
-              child: QuickActionCard(
+              child: _ModernActionCard(
                 icon: LucideIcons.folderPlus,
                 label: 'New Project',
-                description: 'Create a study project',
                 color: colorScheme.primary,
                 onTap: () => CreateProjectSheet.show(context),
-              ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+              ),
             ),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: 12),
             Expanded(
-              child: QuickActionCard(
+              child: _ModernActionCard(
                 icon: LucideIcons.sparkles,
                 label: 'Quick Chat',
-                description: 'Ask AI anything',
                 color: colorScheme.secondary,
                 onTap: () async {
-                  // Create a quick chat conversation
                   final config = await NewChatSheet.show(context);
                   if (config == null || !context.mounted) return;
 
@@ -269,23 +289,242 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   );
 
                   if (conversation != null && context.mounted) {
-                    // Add to conversations list
                     ref.read(conversationsNotifierProvider).addConversation(conversation);
-                    // Navigate to chat
                     context.push('${AppRoutes.conversations}/${conversation.id}');
                   }
                 },
-              ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0),
+              ),
             ),
           ],
         ),
       ],
-    );
+    ).animate().fadeIn(delay: 100.ms, duration: 400.ms);
   }
+}
 
-  Widget _buildStatsSection(BuildContext context, DashboardStats stats) {
+/// Modern action card with glow effect.
+class _ModernActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ModernActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? colorScheme.outlineVariant.withAlpha(77)
+                  : colorScheme.outlineVariant,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(isDark ? 51 : 26),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                label,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'Tap to start',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    LucideIcons.arrowRight,
+                    size: 16,
+                    color: color,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Stats section with real data.
+class _StatsSection extends StatelessWidget {
+  final DashboardStats stats;
+
+  const _StatsSection({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your Progress',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _ModernStatCard(
+                icon: LucideIcons.flame,
+                value: '${stats.dayStreak}',
+                label: 'Day Streak',
+                color: colorScheme.tertiary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ModernStatCard(
+                icon: LucideIcons.messageSquare,
+                value: '${stats.totalConversations}',
+                label: 'Chats',
+                color: colorScheme.secondary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ModernStatCard(
+                icon: LucideIcons.folder,
+                value: '${stats.totalProjects}',
+                label: 'Projects',
+                color: colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
+  }
+}
+
+/// Modern stat card with subtle background.
+class _ModernStatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _ModernStatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? colorScheme.outlineVariant.withAlpha(77)
+              : colorScheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withAlpha(isDark ? 51 : 26),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Section with title and View All button.
+class _RecentSection extends StatelessWidget {
+  final String title;
+  final VoidCallback onViewAll;
+  final Widget child;
+
+  const _RecentSection({
+    required this.title,
+    required this.onViewAll,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,51 +533,361 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Your Progress',
+              title,
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             TextButton(
-              onPressed: () {
-                // TODO: View detailed stats
-              },
-              child: const Text('View All'),
+              onPressed: onViewAll,
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'View All',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    LucideIcons.arrowRight,
+                    size: 16,
+                    color: colorScheme.primary,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: [
-            Expanded(
-              child: StatsCard(
-                icon: LucideIcons.flame,
-                label: 'Day Streak',
-                value: stats.dayStreak > 0 ? '${stats.dayStreak}' : '0',
-                color: colorScheme.tertiary,
-              ).animate().fadeIn(delay: 150.ms).scale(begin: const Offset(0.9, 0.9)),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: StatsCard(
-                icon: LucideIcons.messageSquare,
-                label: 'Chats',
-                value: '${stats.totalConversations}',
-                color: colorScheme.secondary,
-              ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: StatsCard(
-                icon: LucideIcons.fileText,
-                label: 'Documents',
-                value: '${stats.totalDocuments}',
-                color: colorScheme.primary,
-              ).animate().fadeIn(delay: 250.ms).scale(begin: const Offset(0.9, 0.9)),
-            ),
-          ],
-        ),
+        const SizedBox(height: 12),
+        child,
       ],
+    ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
+  }
+}
+
+/// Recent conversations list with real data.
+class _RecentConversationsList extends ConsumerWidget {
+  const _RecentConversationsList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final conversationsNotifier = ref.watch(conversationsNotifierProvider);
+
+    return AnimatedBuilder(
+      animation: conversationsNotifier,
+      builder: (context, _) {
+        final state = conversationsNotifier.state;
+
+        return state.when(
+          initial: () => _buildLoading(context),
+          loading: () => _buildLoading(context),
+          loaded: (conversations, total, isLoadingMore, hasMore) {
+            final recent = conversations.take(3).toList();
+
+            if (recent.isEmpty) {
+              return _buildEmpty(context, 'No conversations yet');
+            }
+
+            return Column(
+              children: recent.map((conversation) {
+                return _ConversationTile(
+                  title: conversation.displayTitle,
+                  subtitle: conversation.projectName ?? 
+                      (conversation.isQuickChat ? 'Quick Chat' : 'Project Chat'),
+                  time: conversation.lastActivityRelative,
+                  icon: conversation.isQuickChat
+                      ? LucideIcons.sparkles
+                      : LucideIcons.bookOpen,
+                  color: conversation.isQuickChat
+                      ? colorScheme.secondary
+                      : colorScheme.primary,
+                  onTap: () {
+                    context.push('${AppRoutes.conversations}/${conversation.id}');
+                  },
+                );
+              }).toList(),
+            );
+          },
+          error: (_) => _buildEmpty(context, 'Failed to load'),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoading(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+
+  Widget _buildEmpty(BuildContext context, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(128),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            LucideIcons.messageCircle,
+            color: colorScheme.onSurfaceVariant,
+            size: 24,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              message,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Projects list with real data.
+class _ProjectsList extends ConsumerWidget {
+  const _ProjectsList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final projectsState = ref.watch(projectsNotifierProvider);
+
+    return projectsState.when(
+      initial: () => _buildLoading(context),
+      loading: () => _buildLoading(context),
+      loaded: (projects, isLoadingMore, hasMore) {
+        final recent = projects.where((p) => !p.isArchived).take(3).toList();
+
+        if (recent.isEmpty) {
+          return _buildEmpty(context, 'No projects yet');
+        }
+
+        return Column(
+          children: recent.map((project) {
+            return _ConversationTile(
+              title: project.name,
+              subtitle: project.description ?? 'No description',
+              time: project.lastUpdatedRelative,
+              icon: LucideIcons.folder,
+              color: colorScheme.primary,
+              onTap: () {
+                context.push('/projects/${project.id}');
+              },
+            );
+          }).toList(),
+        );
+      },
+      error: (_) => _buildEmpty(context, 'Failed to load'),
+    );
+  }
+
+  Widget _buildLoading(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+
+  Widget _buildEmpty(BuildContext context, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(128),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            LucideIcons.folderOpen,
+            color: colorScheme.onSurfaceVariant,
+            size: 24,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              message,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Reusable tile for conversations and projects.
+class _ConversationTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String time;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ConversationTile({
+    required this.title,
+    required this.subtitle,
+    required this.time,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark
+                    ? colorScheme.outlineVariant.withAlpha(51)
+                    : colorScheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(isDark ? 51 : 26),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 22,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      time,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Theme toggle button with smooth animation.
+class _ThemeToggleButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    ref.watch(themeModeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return IconButton(
+      onPressed: () {
+        ref.read(themeModeProvider.notifier).toggleTheme(context);
+      },
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          return RotationTransition(
+            turns: Tween<double>(begin: 0.5, end: 1.0).animate(animation),
+            child: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+          );
+        },
+        child: Icon(
+          isDark ? LucideIcons.sun : LucideIcons.moon,
+          key: ValueKey(isDark),
+          color: colorScheme.onSurfaceVariant,
+          size: 22,
+        ),
+      ),
+      tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+      style: IconButton.styleFrom(
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 }

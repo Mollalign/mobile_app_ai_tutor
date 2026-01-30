@@ -143,7 +143,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  LucideIcons.alertCircle,
+                LucideIcons.alertCircle,
                   size: 32,
                   color: colorScheme.onErrorContainer,
                 ),
@@ -195,8 +195,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: GestureDetector(
           onTap: () => _showConversationInfo(context, conversation),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+              mainAxisSize: MainAxisSize.min,
+              children: [
               // Chat type indicator
               Container(
                 width: 8,
@@ -207,24 +207,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       : colorScheme.secondary,
                   shape: BoxShape.circle,
                 ),
-              ),
+                ),
               const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
+                Flexible(
+                  child: Text(
                   conversation.displayTitle,
                   style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
               const SizedBox(width: 4),
               Icon(
                 LucideIcons.chevronDown,
                 size: 16,
                 color: colorScheme.onSurfaceVariant,
-              ),
-            ],
+            ),
+          ],
           ),
         ),
         actions: [
@@ -429,15 +429,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref
-                  .read(chatNotifierProvider(widget.conversationId))
-                  .updateTitle(controller.text.trim());
-            },
-            child: const Text('Save'),
-          ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  ref
+                      .read(chatNotifierProvider(widget.conversationId))
+                      .updateTitle(controller.text.trim());
+                },
+                child: const Text('Save'),
+              ),
         ],
       ),
     );
@@ -604,8 +604,8 @@ class _EmptyChat extends StatelessWidget {
               runSpacing: AppSpacing.sm,
               alignment: WrapAlignment.center,
               children: prompts.asMap().entries.map((entry) {
-                final index = entry.key;
-                final prompt = entry.value;
+              final index = entry.key;
+              final prompt = entry.value;
                 return _SuggestionChip(
                   text: prompt,
                   onTap: () => onSendMessage(prompt),
@@ -614,7 +614,7 @@ class _EmptyChat extends StatelessWidget {
                       duration: 300.ms,
                     );
               }).toList(),
-            ),
+                    ),
           ],
         ),
       ),
@@ -648,11 +648,11 @@ class _SuggestionChip extends StatelessWidget {
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
-          child: Text(
-            text,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+                child: Text(
+                  text,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
           ),
         ),
       ),

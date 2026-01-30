@@ -5,11 +5,10 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import '../../../../core/constants/app_spacing.dart';
 import '../../domain/entities/entities.dart';
 
 /// Message bubble widget for displaying chat messages.
-/// Clean, minimal design inspired by ChatGPT.
+/// Modern, beautiful design with subtle animations.
 class MessageBubble extends StatelessWidget {
   final Message message;
   final VoidCallback? onCopy;
@@ -37,7 +36,7 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
-/// User message - right-aligned bubble.
+/// User message - Beautiful gradient bubble, right-aligned.
 class _UserMessage extends StatelessWidget {
   final Message message;
 
@@ -47,26 +46,67 @@ class _UserMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+      padding: const EdgeInsets.only(
+        left: 48,
+        right: 16,
+        top: 8,
+        bottom: 8,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const SizedBox(width: AppSpacing.xxl),
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm + 2,
+                horizontal: 18,
+                vertical: 14,
               ),
               decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(20),
+                // Beautiful gradient for user messages
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          colorScheme.primary,
+                          colorScheme.primary.withAlpha(230),
+                        ]
+                      : [
+                          colorScheme.primary,
+                          Color.fromRGBO(
+                            colorScheme.primary.red,
+                            colorScheme.primary.green,
+                            ((colorScheme.primary.b * 255) * 0.85).round().clamp(0, 255),
+                            1,
+                          ),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(6),
+                ),
+                // Subtle glow effect in dark mode
+                boxShadow: isDark
+                    ? [
+                        BoxShadow(
+                          color: colorScheme.primary.withAlpha(51),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: colorScheme.primary.withAlpha(38),
+                          blurRadius: 12,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -75,18 +115,19 @@ class _UserMessage extends StatelessWidget {
                   Text(
                     message.content,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimary,
-                      height: 1.4,
+                      color: Colors.white,
+                      height: 1.5,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   if (message.isPending) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     SizedBox(
-                      width: 12,
-                      height: 12,
+                      width: 14,
+                      height: 14,
                       child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: colorScheme.onPrimary.withAlpha(179),
+                        strokeWidth: 2,
+                        color: Colors.white.withAlpha(179),
                       ),
                     ),
                   ],
@@ -96,11 +137,11 @@ class _UserMessage extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0);
   }
 }
 
-/// Assistant message - left-aligned, clean text without bubble.
+/// Assistant message - Clean, elegant design with markdown support.
 class _AssistantMessage extends StatefulWidget {
   final Message message;
   final VoidCallback? onSourceTap;
@@ -115,140 +156,203 @@ class _AssistantMessage extends StatefulWidget {
 }
 
 class _AssistantMessageState extends State<_AssistantMessage> {
-  bool _isHovered = false;
   bool _showActions = false;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onLongPress: () => setState(() => _showActions = !_showActions),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // AI indicator
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            colorScheme.primary,
-                            colorScheme.secondary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        LucideIcons.sparkles,
-                        size: 14,
-                        color: Colors.white,
-                      ),
+    return GestureDetector(
+      onTap: () {
+        if (_showActions) {
+          setState(() => _showActions = false);
+        }
+      },
+      onLongPress: () => setState(() => _showActions = !_showActions),
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: 16,
+          right: 48,
+          top: 12,
+          bottom: 12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // AI Avatar & Label
+            Row(
+              children: [
+                // Glowing AI avatar
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primary,
+                        colorScheme.secondary,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'AI Tutor',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Message content
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.xxl),
-                child: widget.message.isStreaming && widget.message.content.isEmpty
-                    ? const _TypingIndicator()
-                    : MarkdownBody(
-                        data: widget.message.content,
-                        selectable: true,
-                        styleSheet: MarkdownStyleSheet(
-                          p: textTheme.bodyLarge?.copyWith(
-                            height: 1.6,
-                            color: colorScheme.onSurface,
-                          ),
-                          h1: textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                          ),
-                          h2: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                          ),
-                          h3: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                          ),
-                          code: GoogleFonts.jetBrainsMono(
-                            fontSize: 13,
-                            color: colorScheme.primary,
-                            backgroundColor: colorScheme.surfaceContainerHighest,
-                          ),
-                          codeblockDecoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                          codeblockPadding: const EdgeInsets.all(AppSpacing.md),
-                          blockquoteDecoration: BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: colorScheme.primary,
-                                width: 3,
-                              ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: isDark
+                        ? [
+                            BoxShadow(
+                              color: colorScheme.primary.withAlpha(77),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
-                          blockquotePadding: const EdgeInsets.only(
-                            left: AppSpacing.md,
-                          ),
-                          listBullet: textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-              ),
-
-              // Sources
-              if (widget.message.hasSources) ...[
-                const SizedBox(height: AppSpacing.md),
-                _SourcesSection(
-                  sources: widget.message.sources,
-                  onSourceTap: widget.onSourceTap,
+                          ]
+                        : null,
+                  ),
+                  child: const Icon(
+                    LucideIcons.sparkles,
+                    size: 18,
+                    color: Colors.white,
+                  ),
                 ),
+                const SizedBox(width: 12),
+                Text(
+                  'AI Tutor',
+                  style: textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                // Action button (always visible, subtle)
+                if (!widget.message.isStreaming)
+                  _CopyButton(
+                    message: widget.message,
+                    isVisible: true,
+                  ),
               ],
+            ),
+            const SizedBox(height: 12),
 
-              // Actions (copy, etc.) - show on hover or tap
-              AnimatedSize(
-                duration: const Duration(milliseconds: 200),
-                child: (_isHovered || _showActions) && !widget.message.isStreaming
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: _MessageActions(
-                          message: widget.message,
-                          onDismiss: () => setState(() => _showActions = false),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+            // Message content with beautiful markdown
+            widget.message.isStreaming && widget.message.content.isEmpty
+                ? const _TypingIndicator()
+                : Container(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: MarkdownBody(
+                      data: widget.message.content,
+                      selectable: true,
+                      styleSheet: _buildMarkdownStyleSheet(context),
+                    ),
+                  ),
+
+            // Sources section
+            if (widget.message.hasSources) ...[
+              const SizedBox(height: 16),
+              _SourcesSection(
+                sources: widget.message.sources,
+                onSourceTap: widget.onSourceTap,
               ),
             ],
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.05, end: 0);
+  }
+
+  MarkdownStyleSheet _buildMarkdownStyleSheet(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return MarkdownStyleSheet(
+      // Paragraph
+      p: textTheme.bodyLarge?.copyWith(
+        height: 1.7,
+        color: colorScheme.onSurface,
+        letterSpacing: 0.1,
+      ),
+      
+      // Headers
+      h1: textTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        color: colorScheme.onSurface,
+        height: 1.4,
+      ),
+      h2: textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+        height: 1.4,
+      ),
+      h3: textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+        height: 1.4,
+      ),
+      
+      // Code styling - Modern look
+      code: GoogleFonts.jetBrainsMono(
+        fontSize: 13,
+        color: colorScheme.primary,
+        backgroundColor: isDark
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primaryContainer.withAlpha(77),
+        fontWeight: FontWeight.w500,
+      ),
+      codeblockDecoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E1E1E) // VS Code dark background
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? colorScheme.outlineVariant
+              : colorScheme.outline.withAlpha(77),
+        ),
+      ),
+      codeblockPadding: const EdgeInsets.all(16),
+      
+      // Blockquote - Elegant left border
+      blockquoteDecoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: colorScheme.primary,
+            width: 4,
+          ),
+        ),
+        color: colorScheme.primaryContainer.withAlpha(26),
+      ),
+      blockquotePadding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      
+      // Lists
+      listBullet: textTheme.bodyLarge?.copyWith(
+        color: colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+      listIndent: 24,
+      
+      // Links
+      a: textTheme.bodyLarge?.copyWith(
+        color: colorScheme.primary,
+        decoration: TextDecoration.underline,
+        decorationColor: colorScheme.primary.withAlpha(128),
+      ),
+      
+      // Emphasis
+      strong: textTheme.bodyLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+      ),
+      em: textTheme.bodyLarge?.copyWith(
+        fontStyle: FontStyle.italic,
+        color: colorScheme.onSurface,
+      ),
+      
+      // Horizontal rule
+      horizontalRuleDecoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outlineVariant,
+            width: 1,
           ),
         ),
       ),
@@ -256,7 +360,7 @@ class _AssistantMessageState extends State<_AssistantMessage> {
   }
 }
 
-/// System message - centered, subtle.
+/// System message - Subtle, centered.
 class _SystemMessage extends StatelessWidget {
   final Message message;
 
@@ -270,23 +374,32 @@ class _SystemMessage extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.md,
+          horizontal: 32,
+          vertical: 16,
         ),
-        child: Text(
-          message.content,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontStyle: FontStyle.italic,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
-          textAlign: TextAlign.center,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withAlpha(128),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            message.content,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 300.ms);
   }
 }
 
-/// Typing indicator animation (three dots).
+/// Modern typing indicator with pulsing dots.
 class _TypingIndicator extends StatelessWidget {
   const _TypingIndicator();
 
@@ -294,118 +407,94 @@ class _TypingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (index) {
-        return Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withAlpha(179),
-            shape: BoxShape.circle,
-          ),
-        )
-            .animate(
-              onPlay: (controller) => controller.repeat(),
-            )
-            .fadeIn(delay: (index * 200).ms)
-            .scale(
-              begin: const Offset(0.6, 0.6),
-              end: const Offset(1.0, 1.0),
-              duration: 500.ms,
-              curve: Curves.easeInOut,
-            )
-            .then()
-            .scale(
-              begin: const Offset(1.0, 1.0),
-              end: const Offset(0.6, 0.6),
-              duration: 500.ms,
-              curve: Curves.easeInOut,
-            );
-      }),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(3, (index) {
+          return Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+          )
+              .animate(
+                onPlay: (controller) => controller.repeat(),
+              )
+              .scale(
+                begin: const Offset(0.5, 0.5),
+                end: const Offset(1.0, 1.0),
+                delay: (index * 150).ms,
+                duration: 600.ms,
+                curve: Curves.easeInOut,
+              )
+              .then()
+              .scale(
+                begin: const Offset(1.0, 1.0),
+                end: const Offset(0.5, 0.5),
+                duration: 600.ms,
+                curve: Curves.easeInOut,
+              );
+        }),
+      ),
     );
   }
 }
 
-/// Message action buttons.
-class _MessageActions extends StatelessWidget {
+/// Compact copy button.
+class _CopyButton extends StatelessWidget {
   final Message message;
-  final VoidCallback? onDismiss;
+  final bool isVisible;
 
-  const _MessageActions({
+  const _CopyButton({
     required this.message,
-    this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _ActionButton(
-          icon: LucideIcons.copy,
-          label: 'Copy',
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: message.content));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Copied to clipboard'),
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 1),
-              ),
-            );
-            onDismiss?.call();
-          },
-        ),
-      ],
-    ).animate().fadeIn(duration: 200.ms);
-  }
-}
-
-/// Individual action button.
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
+    required this.isVisible,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 14,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+    return AnimatedOpacity(
+      opacity: isVisible ? 0.6 : 0,
+      duration: const Duration(milliseconds: 200),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: message.content));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(
+                      LucideIcons.check,
+                      size: 18,
+                      color: colorScheme.onInverseSurface,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Copied to clipboard'),
+                  ],
+                ),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-            ],
+            );
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              LucideIcons.copy,
+              size: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ),
@@ -413,7 +502,7 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-/// Sources section with collapsible list.
+/// Sources section with modern expandable design.
 class _SourcesSection extends StatefulWidget {
   final List<SourceCitation> sources;
   final VoidCallback? onSourceTap;
@@ -435,87 +524,113 @@ class _SourcesSectionState extends State<_SourcesSection> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.xs,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  LucideIcons.fileText,
-                  size: 14,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${widget.sources.length} source${widget.sources.length > 1 ? 's' : ''}',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(128),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withAlpha(77),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withAlpha(128),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.fileText,
+                      size: 14,
+                      color: colorScheme.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  _isExpanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
-                  size: 14,
-                  color: colorScheme.primary,
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Text(
+                    '${widget.sources.length} source${widget.sources.length > 1 ? 's' : ''}',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      LucideIcons.chevronDown,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          child: _isExpanded
-              ? Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.xs),
-                  child: Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: widget.sources.map((source) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: 4,
+          
+          // Expandable content
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: widget.sources.map((source) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          LucideIcons.file,
+                          size: 14,
+                          color: colorScheme.primary,
                         ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.fileText,
-                              size: 12,
-                              color: colorScheme.onSurfaceVariant,
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            source.displayText,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurface,
                             ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                source.displayText,
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
+        ],
+      ),
     );
   }
 }

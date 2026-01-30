@@ -77,9 +77,9 @@ class ConversationCard extends StatelessWidget {
                         // Separator
                         Text(
                           ' · ',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                         ),
 
                         // Message count
@@ -87,7 +87,7 @@ class ConversationCard extends StatelessWidget {
                           '${conversation.messageCount} messages',
                           style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                          ),
+                              ),
                         ),
 
                         // Socratic indicator
@@ -104,7 +104,7 @@ class ConversationCard extends StatelessWidget {
                             color: colorScheme.tertiary,
                           ),
                         ],
-                      ],
+                        ],
                     ),
                   ],
                 ),
@@ -155,8 +155,8 @@ class ConversationListTile extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: conversation.isProjectChat
-              ? colorScheme.primaryContainer
-              : colorScheme.secondaryContainer,
+            ? colorScheme.primaryContainer
+            : colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Icon(
@@ -189,7 +189,7 @@ class ConversationListTile extends StatelessWidget {
         children: [
           Text(
             conversation.lastActivityRelative,
-            style: textTheme.bodySmall?.copyWith(
+              style: textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
@@ -199,7 +199,7 @@ class ConversationListTile extends StatelessWidget {
               LucideIcons.graduationCap,
               size: 14,
               color: colorScheme.tertiary,
-            ),
+        ),
           ],
         ],
       ),

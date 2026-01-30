@@ -220,10 +220,10 @@ class ConversationRemoteDataSource {
         for (final event in events) {
           if (event.trim().isEmpty) continue;
           final parsed = _parseSSEEvent(event.trim());
-          if (parsed != null) {
+        if (parsed != null) {
             yieldedEvents++;
             debugPrint('SSE: Final event #$yieldedEvents type=${parsed.type}');
-            yield parsed;
+          yield parsed;
           }
         }
       }
