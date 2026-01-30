@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../projects/domain/entities/entities.dart';
+import '../../../projects/presentation/providers/project_state.dart';
 import '../../../projects/presentation/providers/providers.dart';
 import '../../domain/entities/entities.dart';
 
@@ -35,6 +36,19 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   Project? _selectedProject;
   bool _isSocratic = true;
   final _messageController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Ensure projects are loaded when opening the sheet
+    Future.microtask(() {
+      final projectsState = ref.read(projectsNotifierProvider);
+      // Load projects if they haven't been loaded yet or if there was an error
+      if (projectsState is ProjectsInitial || projectsState is ProjectsError) {
+        ref.read(projectsNotifierProvider.notifier).loadProjects();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -376,6 +390,12 @@ class _ProjectSelector extends ConsumerWidget {
                     color: colorScheme.error,
                   ),
                 ),
+              ),
+              TextButton(
+                onPressed: () {
+                  ref.read(projectsNotifierProvider.notifier).loadProjects(refresh: true);
+                },
+                child: const Text('Retry'),
               ),
             ],
           ),

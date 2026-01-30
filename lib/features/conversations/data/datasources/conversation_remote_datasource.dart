@@ -165,47 +165,70 @@ class ConversationRemoteDataSource {
 
       final stream = response.data!.stream;
       String buffer = '';
-      int rawChunkCount = 0;
+      int yieldedEvents = 0;
 
       debugPrint('SSE: Stream started');
       
       await for (final chunk in stream) {
-        rawChunkCount++;
         final decoded = utf8.decode(chunk);
         buffer += decoded;
-        debugPrint('SSE: Raw chunk #$rawChunkCount received, ${decoded.length} bytes');
-        debugPrint('SSE: Raw content: ${decoded.substring(0, decoded.length > 100 ? 100 : decoded.length)}...');
         
-        // Process complete SSE events (split by double newline)
-        final events = buffer.split('\n\n');
-        
-        // Keep incomplete event in buffer
-        buffer = events.removeLast();
-        
-        debugPrint('SSE: Found ${events.length} complete events in buffer');
-        
-        for (final event in events) {
-          if (event.trim().isEmpty) continue;
+        // Process complete SSE events (separated by \n\n or \r\n\r\n)
+        // Keep processing while we find complete events
+        while (true) {
+          // Find event separator (handle both \n\n and \r\n\r\n)
+          int eventEnd = buffer.indexOf('\n\n');
+          if (eventEnd == -1) {
+            eventEnd = buffer.indexOf('\r\n\r\n');
+          }
           
-          debugPrint('SSE: Parsing event: ${event.substring(0, event.length > 80 ? 80 : event.length)}...');
+          if (eventEnd == -1) break; // No complete event yet
+          
+          final event = buffer.substring(0, eventEnd).trim();
+          buffer = buffer.substring(eventEnd + 2); // Skip past \n\n
+          if (buffer.startsWith('\n') || buffer.startsWith('\r')) {
+            buffer = buffer.substring(1); // Handle extra newlines
+          }
+          
+          if (event.isEmpty) continue;
+          
           final parsed = _parseSSEEvent(event);
           if (parsed != null) {
-            debugPrint('SSE: Parsed event type: ${parsed.type}');
+            yieldedEvents++;
+            debugPrint('SSE: Event #$yieldedEvents type=${parsed.type}');
             yield parsed;
           }
         }
       }
       
-      debugPrint('SSE: Stream ended, processing remaining buffer: ${buffer.length} bytes');
+      debugPrint('SSE: Stream ended, remaining buffer: ${buffer.length} bytes');
       
-      // Process any remaining buffer
+      // Process any remaining buffer - split by various delimiters
+      // The buffer might contain multiple events or partial events
       if (buffer.trim().isNotEmpty) {
-        final parsed = _parseSSEEvent(buffer);
-        if (parsed != null) {
-          debugPrint('SSE: Final parsed event type: ${parsed.type}');
-          yield parsed;
+        // Try splitting by \n\n first
+        var events = buffer.split('\n\n');
+        if (events.length == 1) {
+          // Try splitting by \r\n\r\n
+          events = buffer.split('\r\n\r\n');
+        }
+        if (events.length == 1) {
+          // Try splitting by looking for 'event:' markers
+          events = _splitByEventMarker(buffer);
+        }
+        
+        for (final event in events) {
+          if (event.trim().isEmpty) continue;
+          final parsed = _parseSSEEvent(event.trim());
+          if (parsed != null) {
+            yieldedEvents++;
+            debugPrint('SSE: Final event #$yieldedEvents type=${parsed.type}');
+            yield parsed;
+          }
         }
       }
+      
+      debugPrint('SSE: Total events yielded: $yieldedEvents');
     } catch (e) {
       yield StreamChunk(
         type: StreamChunkType.error,
@@ -214,6 +237,21 @@ class ConversationRemoteDataSource {
     } finally {
       client.close();
     }
+  }
+
+  /// Split buffer by 'event:' markers when standard delimiters don't work.
+  List<String> _splitByEventMarker(String buffer) {
+    final events = <String>[];
+    final pattern = RegExp(r'(?=event:)');
+    final parts = buffer.split(pattern);
+    
+    for (final part in parts) {
+      if (part.trim().isNotEmpty) {
+        events.add(part.trim());
+      }
+    }
+    
+    return events.isEmpty ? [buffer] : events;
   }
 
   /// Parse a single SSE event.

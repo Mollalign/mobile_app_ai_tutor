@@ -214,10 +214,44 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerStatefulWidget {
   final VoidCallback onCreateChat;
 
   const _EmptyState({required this.onCreateChat});
+
+  @override
+  ConsumerState<_EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends ConsumerState<_EmptyState> {
+  bool _isCreating = false;
+
+  Future<void> _startQuickChat() async {
+    if (_isCreating) return;
+    
+    setState(() => _isCreating = true);
+    
+    try {
+      // Create a quick chat conversation directly
+      final notifier = ref.read(createConversationNotifierProvider);
+      final conversation = await notifier.createConversation(
+        projectId: null, // Quick chat has no project
+        isSocratic: true, // Default to Socratic mode
+        initialMessage: null, // No initial message
+      );
+
+      if (conversation != null && mounted) {
+        // Add to conversations list
+        ref.read(conversationsNotifierProvider).addConversation(conversation);
+        // Navigate directly to the chat screen
+        context.push('${AppRoutes.conversations}/${conversation.id}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -258,11 +292,28 @@ class _EmptyState extends StatelessWidget {
               ),
             ).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: AppSpacing.xl),
+            // Quick start button - directly creates chat and navigates
             FilledButton.icon(
-              onPressed: onCreateChat,
-              icon: const Icon(LucideIcons.sparkles),
-              label: const Text('Start Quick Chat'),
+              onPressed: _isCreating ? null : _startQuickChat,
+              icon: _isCreating 
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.onPrimary,
+                      ),
+                    )
+                  : const Icon(LucideIcons.sparkles),
+              label: Text(_isCreating ? 'Creating...' : 'Start Quick Chat'),
             ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
+            const SizedBox(height: AppSpacing.md),
+            // Option to customize with modal
+            TextButton.icon(
+              onPressed: _isCreating ? null : widget.onCreateChat,
+              icon: const Icon(LucideIcons.settings2, size: 18),
+              label: const Text('More Options'),
+            ).animate().fadeIn(delay: 400.ms),
           ],
         ),
       ),

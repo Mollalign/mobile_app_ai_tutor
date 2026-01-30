@@ -169,33 +169,34 @@ class ChatChangeNotifier extends ChangeNotifier {
       final messageId = data['id'] as String?;
       if (messageId == null) return;
       
-      // Check if we already have this message (avoid duplicates)
+      final content = data['content'] as String? ?? '';
+      final role = data['role'] as String? ?? 'user';
+      
+      // Skip assistant messages while we're streaming - the streaming handler
+      // already manages the assistant message, so WebSocket would create duplicates
+      if (currentState.isStreaming && role == 'assistant') {
+        debugPrint('WebSocket: Skipping assistant message during streaming');
+        return;
+      }
+      
+      // Check if we already have this message by ID (avoid duplicates)
       final existingIndex = currentState.messages.indexWhere((m) => m.id == messageId);
       if (existingIndex >= 0) {
         debugPrint('WebSocket: Message $messageId already exists, skipping');
         return;
       }
       
-      // Also check if the message is from current streaming session
-      // (we don't want to duplicate messages we just sent)
-      final content = data['content'] as String? ?? '';
-      final role = data['role'] as String? ?? 'user';
+      // Also check by content for recent messages (handles race conditions with optimistic updates)
+      final recentMessages = currentState.messages.where((m) => 
+        !m.isStreaming && 
+        !m.isPending &&
+        m.role == MessageRole.fromString(role) &&
+        m.content == content &&
+        DateTime.now().difference(m.createdAt).inSeconds < 30
+      );
       
-      // Skip if this matches a recent user message we sent (optimistic update)
-      Message? recentUserMessage;
-      try {
-        recentUserMessage = currentState.messages.lastWhere(
-          (m) => m.role == MessageRole.user && !m.isStreaming && !m.isPending,
-        );
-      } catch (_) {
-        recentUserMessage = null;
-      }
-      
-      if (role == 'user' && 
-          recentUserMessage != null &&
-          recentUserMessage.content == content &&
-          DateTime.now().difference(recentUserMessage.createdAt).inSeconds < 10) {
-        debugPrint('WebSocket: Skipping duplicate user message');
+      if (recentMessages.isNotEmpty) {
+        debugPrint('WebSocket: Skipping duplicate message (content match)');
         return;
       }
       
@@ -406,9 +407,12 @@ class ChatChangeNotifier extends ChangeNotifier {
     final currentState = _state as ChatLoaded;
 
     // Replace streaming message with final message
+    // Use the accumulated content passed to this method, not the message's current content
     final messages = currentState.messages.map((m) {
       if (m.isStreaming) {
-        return m.finishStreaming(
+        // First update the content, then finish streaming
+        final withContent = m.copyWithContent(content);
+        return withContent.finishStreaming(
           finalId: messageId ?? 'ai-${DateTime.now().millisecondsSinceEpoch}',
           finalSources: sources,
         );
