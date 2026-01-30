@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/websocket_service.dart';
 import '../../data/datasources/datasources.dart';
 import '../../data/mappers/mappers.dart';
 import '../../data/repositories/repositories.dart';
@@ -35,9 +36,15 @@ final chatNotifierProvider =
 // ============================================================
 
 /// Notifier that manages the state of a single chat conversation.
+/// 
+/// Features:
+/// - Real-time message synchronization via WebSocket
+/// - Streaming AI responses via SSE
+/// - Optimistic UI updates
 class ChatChangeNotifier extends ChangeNotifier {
   final ConversationRepository _repository;
   final String _conversationId;
+  final WebSocketService _wsService = WebSocketService();
   bool _disposed = false;
 
   ChatState _state = const ChatState.initial();
@@ -55,6 +62,11 @@ class ChatChangeNotifier extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _streamSubscription?.cancel();
+    
+    // Clean up WebSocket connection
+    _wsService.removeAllListeners(_conversationId);
+    _wsService.disconnect(_conversationId);
+    
     super.dispose();
   }
 
@@ -106,12 +118,127 @@ class ChatChangeNotifier extends ChangeNotifier {
         conversation: conversation,
         messages: conversation.messages,
       );
+      
+      // Connect to WebSocket for real-time updates
+      _connectWebSocket();
     } catch (e, stackTrace) {
       debugPrint('Error loading chat: $e');
       debugPrint('Stack trace: $stackTrace');
       _state = ChatState.error(message: _getErrorMessage(e));
     } finally {
       _safeNotifyListeners();
+    }
+  }
+  
+  /// Connect to WebSocket for real-time message sync.
+  void _connectWebSocket() {
+    // Add listener for incoming messages
+    _wsService.addListener(_conversationId, _handleWebSocketMessage);
+    
+    // Connect to WebSocket
+    _wsService.connect(_conversationId).then((connected) {
+      if (connected) {
+        debugPrint('WebSocket: Connected for conversation $_conversationId');
+      } else {
+        debugPrint('WebSocket: Failed to connect for conversation $_conversationId');
+      }
+    });
+  }
+  
+  /// Handle incoming WebSocket messages.
+  void _handleWebSocketMessage(WebSocketMessage message) {
+    if (_disposed) return;
+    if (_state is! ChatLoaded) return;
+    
+    debugPrint('WebSocket: Handling message type=${message.type}');
+    
+    if (message.isNewMessage) {
+      _handleNewMessage(message.data);
+    } else if (message.isError) {
+      debugPrint('WebSocket: Error - ${message.data['error']}');
+    }
+  }
+  
+  /// Handle a new message from WebSocket.
+  void _handleNewMessage(Map<String, dynamic> data) {
+    if (_state is! ChatLoaded) return;
+    final currentState = _state as ChatLoaded;
+    
+    try {
+      // Parse the message data
+      final messageId = data['id'] as String?;
+      if (messageId == null) return;
+      
+      // Check if we already have this message (avoid duplicates)
+      final existingIndex = currentState.messages.indexWhere((m) => m.id == messageId);
+      if (existingIndex >= 0) {
+        debugPrint('WebSocket: Message $messageId already exists, skipping');
+        return;
+      }
+      
+      // Also check if the message is from current streaming session
+      // (we don't want to duplicate messages we just sent)
+      final content = data['content'] as String? ?? '';
+      final role = data['role'] as String? ?? 'user';
+      
+      // Skip if this matches a recent user message we sent (optimistic update)
+      Message? recentUserMessage;
+      try {
+        recentUserMessage = currentState.messages.lastWhere(
+          (m) => m.role == MessageRole.user && !m.isStreaming && !m.isPending,
+        );
+      } catch (_) {
+        recentUserMessage = null;
+      }
+      
+      if (role == 'user' && 
+          recentUserMessage != null &&
+          recentUserMessage.content == content &&
+          DateTime.now().difference(recentUserMessage.createdAt).inSeconds < 10) {
+        debugPrint('WebSocket: Skipping duplicate user message');
+        return;
+      }
+      
+      // Parse sources if present
+      List<SourceCitation> sources = [];
+      if (data['sources'] != null) {
+        final sourcesData = data['sources'] as List<dynamic>?;
+        if (sourcesData != null) {
+          sources = sourcesData.map((s) {
+            final sourceMap = s as Map<String, dynamic>;
+            return SourceCitation(
+              documentId: sourceMap['document_id'] as String? ?? '',
+              documentName: sourceMap['document_name'] as String? ?? '',
+              pageNumber: sourceMap['page_number'] as int?,
+              relevanceScore: (sourceMap['relevance_score'] as num?)?.toDouble() ?? 0.0,
+              excerpt: sourceMap['excerpt'] as String?,
+            );
+          }).toList();
+        }
+      }
+      
+      // Create the message entity
+      final newMessage = Message(
+        id: messageId,
+        conversationId: _conversationId,
+        role: MessageRole.fromString(role),
+        content: content,
+        sources: sources,
+        tokensUsed: data['tokens_used'] as int?,
+        createdAt: data['created_at'] != null 
+            ? DateTime.parse(data['created_at'] as String)
+            : DateTime.now(),
+      );
+      
+      debugPrint('WebSocket: Adding new ${newMessage.role.name} message: ${newMessage.id}');
+      
+      // Add the message to the list
+      _state = currentState.copyWith(
+        messages: [...currentState.messages, newMessage],
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('WebSocket: Error parsing new message - $e');
     }
   }
 

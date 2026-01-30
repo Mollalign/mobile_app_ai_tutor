@@ -73,6 +73,9 @@ dependencies:
   
   # Shared preferences for theme persistence
   shared_preferences: ^2.3.1
+  
+  # WebSocket for real-time communication
+  web_socket_channel: ^3.0.0
 
 dev_dependencies:
   flutter_test:
