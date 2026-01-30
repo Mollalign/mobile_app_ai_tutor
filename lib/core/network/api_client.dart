@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../constants/constants.dart';
 import '../errors/errors.dart';
+import '../storage/storage.dart';
 import './interceptors/auth_interceptor.dart';
 import 'package:flutter/foundation.dart';
 
@@ -68,6 +69,11 @@ class ApiClient {
     _authInterceptor.onLogout = callback;
   }
 
+  /// Get the current auth token for use outside of Dio (e.g., SSE streams).
+  Future<String?> getAuthToken() async {
+    return await SecureStorage().getAccessToken();
+  }
+
   void _ensureInitialized() {
     if (!_isInitialized) {
       throw StateError(
@@ -85,6 +91,8 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
+    void Function(int, int)? onReceiveProgress,
+    CancelToken? cancelToken,
   }) async {
     _ensureInitialized();
     try {
@@ -92,6 +100,8 @@ class ApiClient {
         path,
         queryParameters: queryParameters,
         options: options,
+        onReceiveProgress: onReceiveProgress,
+        cancelToken: cancelToken,
       );
     } on DioException catch (e) {
       throw _handleError(e);
@@ -152,6 +162,53 @@ class ApiClient {
         data: data,
         queryParameters: queryParameters,
         options: options,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// PATCH request.
+  Future<Response<T>> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    _ensureInitialized();
+    try {
+      return await _dio.patch<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// POST form data (for file uploads).
+  Future<Response<T>> postForm<T>(
+    String path,
+    FormData formData, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    void Function(int, int)? onSendProgress,
+    CancelToken? cancelToken,
+  }) async {
+    _ensureInitialized();
+    try {
+      return await _dio.post<T>(
+        path,
+        data: formData,
+        queryParameters: queryParameters,
+        options: (options ?? Options()).copyWith(
+          sendTimeout: Duration(milliseconds: ApiConstants.uploadTimeout),
+          receiveTimeout: Duration(milliseconds: ApiConstants.uploadTimeout),
+        ),
+        onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
       );
     } on DioException catch (e) {
       throw _handleError(e);

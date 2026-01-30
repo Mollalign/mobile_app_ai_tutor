@@ -3,19 +3,27 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/providers/providers.dart';
 import '../features/auth/presentation/screens/screens.dart';
+import '../features/conversations/presentation/screens/screens.dart';
+import '../features/dashboard/presentation/screens/screens.dart';
+import '../features/projects/presentation/screens/screens.dart';
 
 /// App route paths.
 class AppRoutes {
   AppRoutes._();
 
+  // Auth routes
   static const String splash = '/';
   static const String login = '/login';
   static const String register = '/register';
-  static const String home = '/home';
-  // Password Reset routes
   static const String forgotPassword = '/forgot-password';
   static const String verifyResetCode = '/verify-reset-code';
   static const String resetPassword = '/reset-password';
+  
+  // Main app routes
+  static const String home = '/home';
+  static const String projectDetail = '/projects/:id';
+  static const String conversations = '/conversations';
+  static const String chat = '/conversations/:id';
 }
 
 /// Router provider.
@@ -68,6 +76,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
+      // ============================================
+      // Auth Routes
+      // ============================================
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
@@ -81,11 +92,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
-        path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
-      ),
-      // Password Reset routes
-      GoRoute(
         path: AppRoutes.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
@@ -96,6 +102,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.resetPassword,
         builder: (context, state) => const ResetPasswordScreen(),
+      ),
+      
+      // ============================================
+      // Main App Routes (with bottom navigation)
+      // ============================================
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) => const MainShell(),
+      ),
+      
+      // ============================================
+      // Project Routes
+      // ============================================
+      GoRoute(
+        path: AppRoutes.projectDetail,
+        builder: (context, state) {
+          final projectId = state.pathParameters['id']!;
+          return ProjectDetailScreen(projectId: projectId);
+        },
+      ),
+      
+      // ============================================
+      // Conversation Routes
+      // ============================================
+      GoRoute(
+        path: AppRoutes.chat,
+        builder: (context, state) {
+          final conversationId = state.pathParameters['id']!;
+          return ChatScreen(conversationId: conversationId);
+        },
       ),
     ],
   );
