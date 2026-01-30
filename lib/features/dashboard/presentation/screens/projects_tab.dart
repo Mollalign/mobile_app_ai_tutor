@@ -283,10 +283,7 @@ class _ProjectsGridView extends ConsumerWidget {
               context.push('/projects/${project.id}');
             },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
-          ).animate().fadeIn(delay: (50 * index).ms).scale(
-                begin: const Offset(0.95, 0.95),
-                duration: 200.ms,
-              );
+          );
         },
       ),
     );
@@ -339,10 +336,7 @@ class _ProjectsListView extends ConsumerWidget {
               context.push('/projects/${project.id}');
             },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
-          ).animate().fadeIn(delay: (50 * index).ms).slideX(
-                begin: 0.05,
-                duration: 200.ms,
-              );
+          );
         },
       ),
     );

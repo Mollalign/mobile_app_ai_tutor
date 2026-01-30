@@ -63,8 +63,7 @@ class ChatChangeNotifier extends ChangeNotifier {
     if (_disposed) return;
 
     final phase = SchedulerBinding.instance.schedulerPhase;
-    final shouldDefer = phase == SchedulerPhase.persistentCallbacks ||
-        phase == SchedulerPhase.midFrameMicrotasks;
+    final shouldDefer = phase != SchedulerPhase.idle;
 
     if (shouldDefer) {
       SchedulerBinding.instance.addPostFrameCallback((_) {

@@ -305,7 +305,7 @@ class _LoadedContent extends ConsumerWidget {
                       onDownload: doc.isReady
                           ? () => _downloadDocument(context, ref, doc)
                           : null,
-                    ).animate().fadeIn(delay: (50 * index).ms),
+                    ),
                   );
                 },
                 childCount: filteredDocs.length + (isLoadingMore ? 1 : 0),

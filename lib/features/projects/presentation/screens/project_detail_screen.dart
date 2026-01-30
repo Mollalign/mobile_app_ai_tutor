@@ -166,21 +166,23 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                     ),
                   ),
                   child: SafeArea(
+                    bottom: false,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
                         AppSpacing.lg,
-                        AppSpacing.xxl,
+                        AppSpacing.md,
                         AppSpacing.lg,
-                        AppSpacing.lg,
+                        AppSpacing.sm,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(AppSpacing.sm),
+                                padding: const EdgeInsets.all(AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withAlpha(50),
                                   borderRadius: AppRadius.borderRadiusSm,
@@ -189,7 +191,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                                   project.isArchived
                                       ? LucideIcons.archive
                                       : LucideIcons.folder,
-                                  size: 20,
+                                  size: 16,
                                   color: Colors.white,
                                 ),
                               ),
@@ -197,7 +199,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                               if (project.isArchived)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
+                                    horizontal: AppSpacing.xs,
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
@@ -206,34 +208,25 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                                   ),
                                   child: Text(
                                     'Archived',
-                                    style: textTheme.bodySmall?.copyWith(
+                                    style: textTheme.labelSmall?.copyWith(
                                       color: Colors.white.withAlpha(200),
                                     ),
                                   ),
                                 ),
                             ],
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            project.name,
-                            style: textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (project.hasDescription) ...[
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              project.shortDescription ?? '',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withAlpha(180),
+                          const SizedBox(height: AppSpacing.xs),
+                          Flexible(
+                            child: Text(
+                              project.name,
+                              style: textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),

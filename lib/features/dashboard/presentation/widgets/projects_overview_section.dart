@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -54,13 +53,9 @@ class ProjectsOverviewSection extends ConsumerWidget {
             if (recentProjects.isEmpty)
               _buildEmptyState(context)
             else
-              ...recentProjects.asMap().entries.map((entry) {
-                final index = entry.key;
-                final project = entry.value;
-                return _buildProjectCard(context, project)
-                    .animate()
-                    .fadeIn(delay: (100 * index).ms)
-                    .slideY(begin: 0.05, end: 0);
+              // No animations here - they cause semantics issues when provider rebuilds
+              ...recentProjects.map((project) {
+                return _buildProjectCard(context, project);
               }),
           ],
         );

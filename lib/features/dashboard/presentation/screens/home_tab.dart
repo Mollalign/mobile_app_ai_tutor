@@ -14,6 +14,7 @@ import '../widgets/quick_action_card.dart';
 import '../widgets/recent_conversations_section.dart';
 import '../widgets/projects_overview_section.dart';
 import '../widgets/stats_card.dart';
+import '../../../projects/presentation/providers/providers.dart';
 import '../../../projects/presentation/widgets/create_project_sheet.dart';
 
 /// Home tab - the main dashboard view.
@@ -24,11 +25,24 @@ import '../../../projects/presentation/widgets/create_project_sheet.dart';
 /// - Learning stats (real data)
 /// - Recent conversations (real data)
 /// - Projects overview (real data)
-class HomeTab extends ConsumerWidget {
+class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends ConsumerState<HomeTab> {
+  Future<void> _onRefresh() async {
+    // Refresh both projects and conversations
+    await Future.wait([
+      ref.read(projectsNotifierProvider.notifier).loadProjects(refresh: true),
+      ref.read(conversationsNotifierProvider).loadConversations(refresh: true),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -39,8 +53,10 @@ class HomeTab extends ConsumerWidget {
     );
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: CustomScrollView(
+          slivers: [
           // Custom App Bar
           SliverAppBar(
             expandedHeight: 120,
@@ -124,6 +140,7 @@ class HomeTab extends ConsumerWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

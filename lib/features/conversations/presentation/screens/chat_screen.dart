@@ -262,7 +262,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       final message = messages[index];
                       return MessageBubble(
                         message: message,
-                      ).animate().fadeIn(duration: 200.ms);
+                      );
                     },
                   ),
           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -77,13 +76,9 @@ class _RecentConversationsSectionState extends ConsumerState<RecentConversations
                 if (recentConversations.isEmpty)
                   _buildEmptyState(context)
                 else
-                  ...recentConversations.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final conversation = entry.value;
-                    return _buildConversationTile(context, conversation)
-                        .animate()
-                        .fadeIn(delay: (100 * index).ms)
-                        .slideX(begin: 0.05, end: 0);
+                  // No animations here - they cause semantics issues when AnimatedBuilder rebuilds
+                  ...recentConversations.map((conversation) {
+                    return _buildConversationTile(context, conversation);
                   }),
               ],
             );
@@ -241,17 +236,15 @@ class _RecentConversationsSectionState extends ConsumerState<RecentConversations
                         ),
                         const SizedBox(height: AppSpacing.xs),
                       ],
-                      Flexible(
-                        child: Text(
-                          conversation.messageCount > 0
-                              ? '${conversation.messageCount} message${conversation.messageCount == 1 ? '' : 's'}'
-                              : 'No messages yet',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        conversation.messageCount > 0
+                            ? '${conversation.messageCount} message${conversation.messageCount == 1 ? '' : 's'}'
+                            : 'No messages yet',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

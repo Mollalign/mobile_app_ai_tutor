@@ -338,7 +338,7 @@ class _LoadedState extends ConsumerWidget {
                   context.push('${AppRoutes.conversations}/${conversation.id}');
                 },
                 onDelete: () => _confirmDelete(context, ref, conversation),
-              ).animate().fadeIn(delay: (50 * index).ms),
+              ),
             );
           },
         ),
