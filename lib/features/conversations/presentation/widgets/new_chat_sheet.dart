@@ -403,7 +403,7 @@ class _ProjectSelector extends ConsumerWidget {
         }
 
         return DropdownButtonFormField<Project>(
-          value: selectedProject,
+          initialValue: selectedProject,
           onChanged: onChanged,
           decoration: InputDecoration(
             filled: true,

@@ -174,7 +174,7 @@ class ApiConstants {
   
   /// WS - Real-time message sync
   /// Connects to conversation WebSocket for live updates
-  /// Query param: ?token=<access_token>
+  /// Query param: ?token=\<access_token\>
   static String conversationWs(String conversationId) =>
       '$wsBaseUrl$apiPrefix/conversations/$conversationId/ws';
 

@@ -284,8 +284,8 @@ class _SendButton extends StatelessWidget {
                 colors: [
                   colorScheme.primary,
                   Color.fromRGBO(
-                    colorScheme.primary.red,
-                    colorScheme.primary.green,
+                    (colorScheme.primary.r * 255.0).round().clamp(0, 255),
+                    (colorScheme.primary.g * 255.0).round().clamp(0, 255),
                     ((colorScheme.primary.b * 255) * 0.85).round().clamp(0, 255),
                     1,
                   ),
