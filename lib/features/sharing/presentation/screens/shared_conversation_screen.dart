@@ -75,7 +75,7 @@ class _SharedConversationContentState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Conversation forked successfully!')),
         );
-        context.go('/chat/${fork.conversationId}');
+        context.go('/conversations/${fork.conversationId}');
       }
     } catch (e) {
       setState(() => _isForking = false);

@@ -28,7 +28,10 @@ class AppRoutes {
   
   // Sharing routes
   static const String myShares = '/my-shares';
-  static const String sharedConversation = '/shared/:token';
+  static const String sharedConversationPath = '/shared/:token';
+  
+  /// Generate shared conversation route with token
+  static String sharedConversation(String token) => '/shared/$token';
 }
 
 /// Router provider.
@@ -147,7 +150,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MySharesScreen(),
       ),
       GoRoute(
-        path: AppRoutes.sharedConversation,
+        path: AppRoutes.sharedConversationPath,
         builder: (context, state) {
           final token = state.pathParameters['token']!;
           return SharedConversationScreen(shareToken: token);

@@ -124,6 +124,16 @@ class ProfileTab extends ConsumerWidget {
 
           _buildSettingsTile(
             context,
+            icon: LucideIcons.search,
+            title: 'Browse Shared',
+            subtitle: 'View a shared conversation by code',
+            onTap: () {
+              _showEnterShareCodeDialog(context);
+            },
+          ),
+
+          _buildSettingsTile(
+            context,
             icon: LucideIcons.brain,
             title: 'Learning Preferences',
             subtitle: 'Socratic mode, difficulty level',
@@ -397,6 +407,72 @@ class ProfileTab extends ConsumerWidget {
               backgroundColor: colorScheme.error,
             ),
             child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showEnterShareCodeDialog(BuildContext context) {
+    final controller = TextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(LucideIcons.search, color: colorScheme.primary),
+            const SizedBox(width: AppSpacing.sm),
+            const Text('Browse Shared'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter the share code to view a shared conversation:',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Paste share code here...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(LucideIcons.key),
+              ),
+              textInputAction: TextInputAction.go,
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  Navigator.pop(context);
+                  context.push(AppRoutes.sharedConversation(value.trim()));
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final code = controller.text.trim();
+              if (code.isNotEmpty) {
+                Navigator.pop(context);
+                context.push(AppRoutes.sharedConversation(code));
+              }
+            },
+            child: const Text('View'),
           ),
         ],
       ),

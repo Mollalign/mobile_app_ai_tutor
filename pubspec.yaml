@@ -82,6 +82,9 @@ dependencies:
   
   # Image picker for camera/gallery
   image_picker: ^1.0.7
+  
+  # Share content with other apps
+  share_plus: ^10.0.0
 
 dev_dependencies:
   flutter_test:

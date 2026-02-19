@@ -192,7 +192,7 @@ class ApiConstants {
 
   /// POST - Share privately with users
   /// Request: { user_emails, can_reply? }
-  /// Response: List<ConversationAccessResponse>
+  /// Response: List of ConversationAccessResponse
   static String sharePrivate(String conversationId) => 
       '$apiBaseUrl/conversations/$conversationId/share-private';
 
