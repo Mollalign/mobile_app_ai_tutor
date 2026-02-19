@@ -121,11 +121,21 @@ class _ShareConversationSheetState extends ConsumerState<ShareConversationSheet>
     );
   }
   
+  void _copyShareLink() {
+    if (_createdShare?.shareUrl != null) {
+      Clipboard.setData(ClipboardData(text: _createdShare!.shareUrl!));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Share link copied to clipboard!')),
+      );
+    }
+  }
+  
   Future<void> _shareWithOthers() async {
     final title = _createdShare?.title ?? 'Shared Conversation';
+    final shareUrl = _createdShare?.shareUrl ?? '';
     final shareText = 'Check out this conversation: "$title"\n\n'
-        'Share code: ${_createdShare!.shareToken}\n\n'
-        'Open the app and enter this code in "Browse Shared" to view it.';
+        '${shareUrl.isNotEmpty ? 'Link: $shareUrl\n\n' : ''}'
+        'Or use share code: ${_createdShare!.shareToken}';
     
     await Share.share(shareText, subject: 'Shared Conversation');
   }
@@ -427,92 +437,158 @@ class _ShareConversationSheetState extends ConsumerState<ShareConversationSheet>
           const SizedBox(height: AppSpacing.sm),
 
           Text(
-            'Share this code with others to let them view the conversation',
+            'Share using either the link or the code below',
             style: textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Shareable Link box
+          if (_createdShare?.shareUrl != null) ...[
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        LucideIcons.link,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        'Shareable Link',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SelectableText(
+                          _createdShare!.shareUrl!,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 2,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _copyShareLink,
+                        icon: const Icon(LucideIcons.copy),
+                        iconSize: 18,
+                        tooltip: 'Copy link',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 250.ms),
+            const SizedBox(height: AppSpacing.md),
+          ],
 
           // Share code box
           Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withAlpha(77),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: colorScheme.primary.withAlpha(51),
-                width: 2,
+                width: 1,
               ),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Share Code',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      LucideIcons.key,
+                      size: 16,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'Share Code (for app users)',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                SelectableText(
-                  _createdShare!.shareToken,
-                  style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.primary,
-                    letterSpacing: 1.2,
-                  ),
-                  textAlign: TextAlign.center,
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        _createdShare!.shareToken,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _copyShareToken,
+                      icon: const Icon(LucideIcons.copy),
+                      iconSize: 18,
+                      tooltip: 'Copy code',
+                    ),
+                  ],
                 ),
               ],
             ),
           ).animate().fadeIn(delay: 300.ms),
           const SizedBox(height: AppSpacing.lg),
 
-          // Actions row 1: Copy & Share
+          // Main action: Share
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _shareWithOthers,
+              icon: const Icon(LucideIcons.share2),
+              label: const Text('Share with Others'),
+            ),
+          ).animate().fadeIn(delay: 350.ms),
+          const SizedBox(height: AppSpacing.sm),
+          
+          // Secondary actions row
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _copyShareToken,
-                  icon: const Icon(LucideIcons.copy),
-                  label: const Text('Copy Code'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    context.push(AppRoutes.sharedConversation(_createdShare!.shareToken));
+                  },
+                  icon: const Icon(LucideIcons.eye),
+                  label: const Text('Preview'),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: _shareWithOthers,
-                  icon: const Icon(LucideIcons.share2),
-                  label: const Text('Share'),
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Done'),
                 ),
               ),
             ],
           ).animate().fadeIn(delay: 400.ms),
-          const SizedBox(height: AppSpacing.md),
-          
-          // Actions row 2: View
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.push(AppRoutes.sharedConversation(_createdShare!.shareToken));
-              },
-              icon: const Icon(LucideIcons.externalLink),
-              label: const Text('View Shared Conversation'),
-            ),
-          ).animate().fadeIn(delay: 450.ms),
-          const SizedBox(height: AppSpacing.md),
-          
-          // Close button
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
-            ),
-          ).animate().fadeIn(delay: 500.ms),
         ],
       ),
     );
