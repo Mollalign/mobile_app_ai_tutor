@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../app/router.dart';
 import '../../../../app/theme_provider.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../auth/presentation/providers/providers.dart';
@@ -109,6 +111,16 @@ class ProfileTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
+
+          _buildSettingsTile(
+            context,
+            icon: LucideIcons.share2,
+            title: 'My Shared Links',
+            subtitle: 'Manage your shared conversations',
+            onTap: () {
+              context.push(AppRoutes.myShares);
+            },
+          ),
 
           _buildSettingsTile(
             context,

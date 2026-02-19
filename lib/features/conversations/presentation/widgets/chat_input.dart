@@ -1,15 +1,38 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
+/// Attachment data for images or URLs.
+class ChatAttachment {
+  final String? imageBase64;
+  final String? imagePath;
+  final String? imageUrl;
+  final String? extractedUrl;
+
+  const ChatAttachment({
+    this.imageBase64,
+    this.imagePath,
+    this.imageUrl,
+    this.extractedUrl,
+  });
+
+  bool get hasImage => imageBase64 != null || imagePath != null || imageUrl != null;
+  bool get hasUrl => extractedUrl != null;
+}
 
 /// Modern chat input widget with beautiful glass-morphic design.
 /// Premium feel with smooth animations and glowing accents.
 class ChatInput extends StatefulWidget {
-  final Function(String) onSend;
+  final Function(String, {ChatAttachment? attachment}) onSend;
   final bool isLoading;
   final bool isSocratic;
   final VoidCallback? onToggleSocratic;
   final String? hintText;
+  final bool enableImageAttachment;
 
   const ChatInput({
     super.key,
@@ -18,6 +41,7 @@ class ChatInput extends StatefulWidget {
     this.isSocratic = true,
     this.onToggleSocratic,
     this.hintText,
+    this.enableImageAttachment = true,
   });
 
   @override
@@ -27,8 +51,11 @@ class ChatInput extends StatefulWidget {
 class _ChatInputState extends State<ChatInput> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _imagePicker = ImagePicker();
   bool _hasText = false;
   bool _isFocused = false;
+  File? _attachedImage;
+  String? _attachedImageBase64;
 
   @override
   void initState() {
@@ -57,13 +84,82 @@ class _ChatInputState extends State<ChatInput> {
     setState(() => _isFocused = _focusNode.hasFocus);
   }
 
+  bool get _canSend => (_hasText || _attachedImage != null) && !widget.isLoading;
+
   void _sendMessage() {
     final text = _controller.text.trim();
-    if (text.isEmpty || widget.isLoading) return;
+    if (!_canSend) return;
 
-    widget.onSend(text);
+    ChatAttachment? attachment;
+    if (_attachedImageBase64 != null) {
+      attachment = ChatAttachment(imageBase64: _attachedImageBase64);
+    }
+
+    widget.onSend(text.isEmpty ? 'Analyze this image' : text, attachment: attachment);
     _controller.clear();
+    _clearAttachment();
     _focusNode.requestFocus();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _attachedImage = File(pickedFile.path);
+          _attachedImageBase64 = base64Encode(bytes);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
+  void _clearAttachment() {
+    setState(() {
+      _attachedImage = null;
+      _attachedImageBase64 = null;
+    });
+  }
+
+  void _showAttachmentOptions() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(LucideIcons.camera, color: colorScheme.primary),
+              title: const Text('Take a photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: Icon(LucideIcons.image, color: colorScheme.secondary),
+              title: const Text('Choose from gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -91,6 +187,13 @@ class _ChatInputState extends State<ChatInput> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Image attachment preview
+              if (_attachedImage != null)
+                _AttachmentPreview(
+                  image: _attachedImage!,
+                  onRemove: _clearAttachment,
+                ),
+
               // Main input container with glass effect
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -119,10 +222,23 @@ class _ChatInputState extends State<ChatInput> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    // Attachment button
+                    if (widget.enableImageAttachment)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6, bottom: 6),
+                        child: _AttachmentButton(
+                          onTap: _showAttachmentOptions,
+                          hasAttachment: _attachedImage != null,
+                        ),
+                      ),
+
                     // Socratic mode toggle
                     if (widget.onToggleSocratic != null)
                       Padding(
-                        padding: const EdgeInsets.only(left: 6, bottom: 6),
+                        padding: EdgeInsets.only(
+                          left: widget.enableImageAttachment ? 0 : 6,
+                          bottom: 6,
+                        ),
                         child: _ModeToggleButton(
                           isSocratic: widget.isSocratic,
                           onToggle: widget.onToggleSocratic!,
@@ -145,13 +261,15 @@ class _ChatInputState extends State<ChatInput> {
                           height: 1.4,
                         ),
                         decoration: InputDecoration(
-                          hintText: widget.hintText ?? 'Ask anything...',
+                          hintText: _attachedImage != null
+                              ? 'Add a message (optional)...'
+                              : (widget.hintText ?? 'Ask anything...'),
                           hintStyle: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant.withAlpha(128),
                           ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.only(
-                            left: widget.onToggleSocratic != null ? 8 : 20,
+                            left: (widget.onToggleSocratic != null || widget.enableImageAttachment) ? 8 : 20,
                             right: 8,
                             top: 16,
                             bottom: 16,
@@ -165,7 +283,7 @@ class _ChatInputState extends State<ChatInput> {
                     Padding(
                       padding: const EdgeInsets.only(right: 6, bottom: 6),
                       child: _SendButton(
-                        isEnabled: _hasText && !widget.isLoading,
+                        isEnabled: _canSend,
                         isLoading: widget.isLoading,
                         onPressed: _sendMessage,
                       ),
@@ -211,6 +329,113 @@ class _ChatInputState extends State<ChatInput> {
         ),
       ),
     );
+  }
+}
+
+/// Attachment button with plus icon.
+class _AttachmentButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final bool hasAttachment;
+
+  const _AttachmentButton({
+    required this.onTap,
+    required this.hasAttachment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: hasAttachment
+                ? colorScheme.primaryContainer
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Icon(
+            hasAttachment ? LucideIcons.paperclip : LucideIcons.plus,
+            size: 20,
+            color: hasAttachment
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant.withAlpha(179),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Attachment preview with remove button.
+class _AttachmentPreview extends StatelessWidget {
+  final File image;
+  final VoidCallback onRemove;
+
+  const _AttachmentPreview({
+    required this.image,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  image,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Material(
+                  color: colorScheme.error,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: onRemove,
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        LucideIcons.x,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Image attached',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: 0.2);
   }
 }
 

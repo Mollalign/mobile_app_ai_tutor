@@ -35,11 +35,17 @@ abstract class ConversationRepository {
   Future<Message> sendMessage({
     required String conversationId,
     required String message,
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
   });
 
   /// Send a message with streaming response.
   Stream<StreamChunk> sendMessageStream({
     required String conversationId,
     required String message,
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
   });
 }

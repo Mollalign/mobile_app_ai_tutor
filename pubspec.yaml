@@ -79,6 +79,9 @@ dependencies:
   
   # Markdown rendering for AI responses
   flutter_markdown: ^0.7.4
+  
+  # Image picker for camera/gallery
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

@@ -161,6 +161,56 @@ class ApiConstants {
       '$apiBaseUrl/conversations/$conversationId/messages/stream';
 
   // ============================================================
+  // Sharing Endpoints
+  // ============================================================
+
+  /// POST - Create public share link
+  /// Query: conversation_id
+  /// Request: { title?, allow_replies?, expires_in_days? }
+  /// Response: SharedConversationResponse
+  /// 
+  /// GET - List my shares
+  /// Response: SharedByMeListResponse
+  static String get shares => '$apiBaseUrl/shares';
+
+  /// GET - Get share details
+  /// PATCH - Update share settings
+  /// DELETE - Delete share
+  static String share(String shareId) => '$apiBaseUrl/shares/$shareId';
+
+  /// GET - Get share statistics
+  static String shareStats(String shareId) => '$apiBaseUrl/shares/$shareId/stats';
+
+  /// GET - View shared conversation (no auth required)
+  /// Response: SharedConversationFull
+  static String sharedConversation(String token) => '$apiBaseUrl/shared/$token';
+
+  /// POST - Fork shared conversation
+  /// Request: { initial_message? }
+  /// Response: ConversationForkResponse
+  static String forkSharedConversation(String token) => '$apiBaseUrl/shared/$token/fork';
+
+  /// POST - Share privately with users
+  /// Request: { user_emails, can_reply? }
+  /// Response: List<ConversationAccessResponse>
+  static String sharePrivate(String conversationId) => 
+      '$apiBaseUrl/conversations/$conversationId/share-private';
+
+  /// GET - List conversations shared with me
+  /// Response: SharedWithMeListResponse
+  static String get sharedWithMe => '$apiBaseUrl/shared-with-me';
+
+  /// DELETE - Revoke user access
+  static String revokeAccess(String conversationId, String userId) => 
+      '$apiBaseUrl/conversations/$conversationId/access/$userId';
+
+  /// POST - Fork a conversation I have access to
+  /// Request: { initial_message? }
+  /// Response: ConversationForkResponse
+  static String forkConversation(String conversationId) => 
+      '$apiBaseUrl/conversations/$conversationId/fork';
+
+  // ============================================================
   // WebSocket Endpoints
   // ============================================================
   

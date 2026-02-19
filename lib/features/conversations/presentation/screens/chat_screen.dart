@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../sharing/presentation/widgets/share_conversation_sheet.dart';
 import '../../domain/entities/entities.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
@@ -264,7 +265,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           // Chat input
           ChatInput(
-            onSend: _sendMessage,
+            onSend: (content, {attachment}) => _sendMessage(content, attachment: attachment),
             isLoading: isLoading,
             isSocratic: conversation.isSocratic,
             onToggleSocratic: () => ref
@@ -273,16 +274,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             hintText: conversation.isProjectChat
                 ? 'Ask about your documents...'
                 : 'Ask anything...',
+            enableImageAttachment: true,
           ),
         ],
       ),
     );
   }
 
-  void _sendMessage(String content) {
+  void _sendMessage(String content, {ChatAttachment? attachment}) {
     ref
         .read(chatNotifierProvider(widget.conversationId))
-        .sendMessageStreaming(content);
+        .sendMessageStreaming(
+          content,
+          imageBase64: attachment?.imageBase64,
+          imageUrl: attachment?.imageUrl,
+        );
   }
 
   void _showConversationInfo(BuildContext context, ConversationDetail conversation) {
@@ -376,6 +382,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             ListTile(
               leading: Icon(
+                LucideIcons.share2,
+                color: colorScheme.primary,
+              ),
+              title: const Text('Share conversation'),
+              onTap: () {
+                Navigator.pop(context);
+                _showShareSheet(context, conversation);
+              },
+            ),
+            ListTile(
+              leading: Icon(
                 conversation.isSocratic
                     ? LucideIcons.graduationCap
                     : LucideIcons.messageSquare,
@@ -406,6 +423,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: AppSpacing.md),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showShareSheet(BuildContext context, ConversationDetail conversation) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => ShareConversationSheet(
+        conversationId: conversation.id,
+        conversationTitle: conversation.displayTitle,
       ),
     );
   }

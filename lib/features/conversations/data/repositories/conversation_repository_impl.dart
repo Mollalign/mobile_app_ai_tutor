@@ -74,10 +74,16 @@ class ConversationRepositoryImpl implements ConversationRepository {
   Future<Message> sendMessage({
     required String conversationId,
     required String message,
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
   }) async {
     final response = await _remoteDataSource.sendMessage(
       conversationId: conversationId,
       message: message,
+      imageBase64: imageBase64,
+      imageUrl: imageUrl,
+      autoExtractUrls: autoExtractUrls,
     );
     return ConversationMapper.messageFromChatResponse(response);
   }
@@ -86,10 +92,16 @@ class ConversationRepositoryImpl implements ConversationRepository {
   Stream<StreamChunk> sendMessageStream({
     required String conversationId,
     required String message,
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
   }) {
     return _remoteDataSource.sendMessageStream(
       conversationId: conversationId,
       message: message,
+      imageBase64: imageBase64,
+      imageUrl: imageUrl,
+      autoExtractUrls: autoExtractUrls,
     );
   }
 }

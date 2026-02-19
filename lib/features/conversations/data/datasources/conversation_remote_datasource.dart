@@ -120,10 +120,18 @@ class ConversationRemoteDataSource {
   Future<ChatResponseModel> sendMessage({
     required String conversationId,
     required String message,
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
   }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiConstants.messages(conversationId),
-      data: {'message': message},
+      data: {
+        'message': message,
+        if (imageBase64 != null) 'image_base64': imageBase64,
+        if (imageUrl != null) 'image_url': imageUrl,
+        'auto_extract_urls': autoExtractUrls,
+      },
     );
 
     return ChatResponseModel.fromJson(response.data!);
@@ -143,6 +151,9 @@ class ConversationRemoteDataSource {
   Stream<StreamChunk> sendMessageStream({
     required String conversationId,
     required String message,
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
   }) async* {
     final client = Dio();
     
@@ -152,7 +163,12 @@ class ConversationRemoteDataSource {
       
       final response = await client.post<ResponseBody>(
         ApiConstants.messagesStream(conversationId),
-        data: {'message': message},
+        data: {
+          'message': message,
+          if (imageBase64 != null) 'image_base64': imageBase64,
+          if (imageUrl != null) 'image_url': imageUrl,
+          'auto_extract_urls': autoExtractUrls,
+        },
         options: Options(
           headers: {
             'Authorization': 'Bearer $authToken',

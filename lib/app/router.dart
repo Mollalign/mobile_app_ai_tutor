@@ -6,6 +6,7 @@ import '../features/auth/presentation/screens/screens.dart';
 import '../features/conversations/presentation/screens/screens.dart';
 import '../features/dashboard/presentation/screens/screens.dart';
 import '../features/projects/presentation/screens/screens.dart';
+import '../features/sharing/presentation/screens/screens.dart';
 
 /// App route paths.
 class AppRoutes {
@@ -24,6 +25,10 @@ class AppRoutes {
   static const String projectDetail = '/projects/:id';
   static const String conversations = '/conversations';
   static const String chat = '/conversations/:id';
+  
+  // Sharing routes
+  static const String myShares = '/my-shares';
+  static const String sharedConversation = '/shared/:token';
 }
 
 /// Router provider.
@@ -131,6 +136,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final conversationId = state.pathParameters['id']!;
           return ChatScreen(conversationId: conversationId);
+        },
+      ),
+      
+      // ============================================
+      // Sharing Routes
+      // ============================================
+      GoRoute(
+        path: AppRoutes.myShares,
+        builder: (context, state) => const MySharesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.sharedConversation,
+        builder: (context, state) {
+          final token = state.pathParameters['token']!;
+          return SharedConversationScreen(shareToken: token);
         },
       ),
     ],

@@ -296,7 +296,12 @@ class ChatChangeNotifier extends ChangeNotifier {
   }
 
   /// Send a message with streaming response.
-  Future<void> sendMessageStreaming(String content) async {
+  Future<void> sendMessageStreaming(
+    String content, {
+    String? imageBase64,
+    String? imageUrl,
+    bool autoExtractUrls = true,
+  }) async {
     if (_state is! ChatLoaded) {
       debugPrint('Cannot send message: state is not ChatLoaded');
       return;
@@ -307,7 +312,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       return;
     }
 
-    debugPrint('Starting streaming message: $content');
+    debugPrint('Starting streaming message: $content (hasImage: ${imageBase64 != null})');
 
     // Cancel any existing stream
     await _streamSubscription?.cancel();
@@ -319,6 +324,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       role: MessageRole.user,
       content: content,
       createdAt: DateTime.now(),
+      hasImageAttachment: imageBase64 != null || imageUrl != null,
     );
 
     // Add streaming placeholder for AI
@@ -340,6 +346,9 @@ class ChatChangeNotifier extends ChangeNotifier {
         .sendMessageStream(
       conversationId: _conversationId,
       message: content,
+      imageBase64: imageBase64,
+      imageUrl: imageUrl,
+      autoExtractUrls: autoExtractUrls,
     )
         .listen(
       (chunk) {

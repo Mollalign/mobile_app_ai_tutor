@@ -91,6 +91,12 @@ class Message {
   /// For pending messages (being streamed).
   final bool isPending;
   final bool isStreaming;
+  
+  /// Whether this message has an image attachment.
+  final bool hasImageAttachment;
+  
+  /// Attachment metadata (URLs, extracted content, etc.).
+  final Map<String, dynamic>? attachments;
 
   const Message({
     required this.id,
@@ -102,6 +108,8 @@ class Message {
     required this.createdAt,
     this.isPending = false,
     this.isStreaming = false,
+    this.hasImageAttachment = false,
+    this.attachments,
   });
 
   /// Create a pending user message.
@@ -164,6 +172,8 @@ class Message {
       createdAt: createdAt,
       isPending: isPending,
       isStreaming: isStreaming,
+      hasImageAttachment: hasImageAttachment,
+      attachments: attachments,
     );
   }
 
@@ -182,6 +192,8 @@ class Message {
       createdAt: createdAt,
       isPending: false,
       isStreaming: false,
+      hasImageAttachment: hasImageAttachment,
+      attachments: attachments,
     );
   }
 }
