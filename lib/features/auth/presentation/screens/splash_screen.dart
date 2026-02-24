@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/widgets.dart';
 import '../providers/providers.dart';
 
 /// Splash screen shown while checking authentication status.
@@ -34,36 +36,28 @@ class SplashScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App logo container with subtle shadow
-                Container(
-                  padding: AppSpacing.paddingAllLg,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withAlpha(51),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.school_rounded,
-                    size: 64,
-                    color: colorScheme.primary,
-                  ),
-                ),
+                // Branded animated logo
+                const AppLogo(size: 96)
+                    .animate()
+                    .scale(
+                      duration: 600.ms,
+                      curve: Curves.elasticOut,
+                    )
+                    .then()
+                    .shimmer(
+                      duration: 1500.ms,
+                      color: colorScheme.primary.withAlpha(51),
+                    ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // App name
                 Text(
-                  'Learn With AI-Tutor',
+                  'AI Tutor',
                   style: textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
                   ),
-                ),
+                ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
                 const SizedBox(height: AppSpacing.sm),
 
                 // Tagline
@@ -72,7 +66,7 @@ class SplashScreen extends ConsumerWidget {
                   style: textTheme.bodyLarge?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                ),
+                ).animate().fadeIn(delay: 500.ms, duration: 500.ms),
                 const SizedBox(height: AppSpacing.xxl),
 
                 // Loading indicator or error

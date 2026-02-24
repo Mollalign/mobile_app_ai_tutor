@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/widgets.dart';
 import '../../../conversations/domain/entities/entities.dart';
 import '../../../conversations/presentation/providers/providers.dart';
 import '../../../conversations/presentation/widgets/widgets.dart';
@@ -173,14 +174,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: CircularProgressIndicator(
-        color: colorScheme.primary,
-        strokeWidth: 2,
-      ),
-    );
+    return const ShimmerConversationList();
   }
 }
 
@@ -195,53 +189,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-              LucideIcons.alertCircle,
-                size: 32,
-                color: colorScheme.onErrorContainer,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Something went wrong',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(LucideIcons.refreshCw, size: 18),
-              label: const Text('Try again'),
-            ),
-          ],
-        ),
-      ),
-    );
+    return ErrorState(message: message, onRetry: onRetry);
   }
 }
 
@@ -292,27 +240,9 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.secondary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                LucideIcons.sparkles,
-                size: 40,
-                color: Colors.white,
-              ),
-            ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+            const AppLogo(size: 80)
+                .animate()
+                .scale(duration: 400.ms, curve: Curves.elasticOut),
             const SizedBox(height: AppSpacing.lg),
 
             Text(
@@ -429,7 +359,19 @@ class _LoadedState extends ConsumerWidget {
                 },
                 onDelete: () => _confirmDelete(context, ref, conversation),
               ),
-            );
+            )
+                .animate()
+                .fadeIn(
+                  delay: (50 * index).ms,
+                  duration: 300.ms,
+                )
+                .slideY(
+                  begin: 0.1,
+                  end: 0,
+                  delay: (50 * index).ms,
+                  duration: 300.ms,
+                  curve: Curves.easeOutCubic,
+                );
           },
         ),
       ),

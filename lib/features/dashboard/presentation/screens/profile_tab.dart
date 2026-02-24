@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -28,89 +29,96 @@ class ProfileTab extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          // User Card
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: AppRadius.borderRadiusLg,
-              border: Border.all(
-                color: colorScheme.outlineVariant,
-              ),
-            ),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withAlpha(180),
-                      ],
-                    ),
-                    borderRadius: AppRadius.borderRadiusMd,
-                  ),
-                  child: Center(
-                    child: Text(
-                      user?.initials ?? '?',
-                      style: textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.fullName ?? 'User',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        user?.email ?? '',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+      body: CustomScrollView(
+        slivers: [
+          // Gradient header with user info
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            backgroundColor: colorScheme.surface,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.primary,
+                      Color.lerp(colorScheme.primary, colorScheme.secondary, 0.6)!,
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () {
-                    // TODO: Edit profile
-                  },
-                  icon: const Icon(LucideIcons.pencil),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(38),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withAlpha(77),
+                              width: 2,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              user?.initials ?? '?',
+                              style: textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          user?.fullName ?? 'User',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ).animate().fadeIn(delay: 100.ms),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          user?.email ?? '',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withAlpha(204),
+                          ),
+                        ).animate().fadeIn(delay: 200.ms),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
 
-          const SizedBox(height: AppSpacing.xl),
-
-          // Settings Section
-          Text(
-            'Settings',
-            style: textTheme.titleSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+          // Settings list
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Settings Section
+                Text(
+                  'Settings',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
 
           _buildSettingsTile(
             context,
@@ -224,7 +232,10 @@ class ProfileTab extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl + 80),
+              ]),
+            ),
+          ),
         ],
       ),
     );

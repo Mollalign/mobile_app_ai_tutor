@@ -399,46 +399,79 @@ class _SystemMessage extends StatelessWidget {
   }
 }
 
-/// Modern typing indicator with pulsing dots.
+/// Beautiful thinking indicator with animated gradient dots and shimmer.
 class _TypingIndicator extends StatelessWidget {
   const _TypingIndicator();
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: List.generate(3, (index) {
-          return Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
+              color: colorScheme.surfaceContainerHighest.withAlpha(179),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Thinking',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ...List.generate(3, (index) {
+                  return Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.secondary,
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                      .animate(
+                        onPlay: (controller) => controller.repeat(),
+                      )
+                      .scale(
+                        begin: const Offset(0.4, 0.4),
+                        end: const Offset(1.0, 1.0),
+                        delay: (index * 200).ms,
+                        duration: 600.ms,
+                        curve: Curves.easeInOut,
+                      )
+                      .then()
+                      .scale(
+                        begin: const Offset(1.0, 1.0),
+                        end: const Offset(0.4, 0.4),
+                        duration: 600.ms,
+                        curve: Curves.easeInOut,
+                      );
+                }),
+              ],
             ),
           )
-              .animate(
-                onPlay: (controller) => controller.repeat(),
-              )
-              .scale(
-                begin: const Offset(0.5, 0.5),
-                end: const Offset(1.0, 1.0),
-                delay: (index * 150).ms,
-                duration: 600.ms,
-                curve: Curves.easeInOut,
-              )
-              .then()
-              .scale(
-                begin: const Offset(1.0, 1.0),
-                end: const Offset(0.5, 0.5),
-                duration: 600.ms,
-                curve: Curves.easeInOut,
-              );
-        }),
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .shimmer(
+                duration: 2000.ms,
+                color: colorScheme.primary.withAlpha(26),
+              ),
+        ],
       ),
     );
   }

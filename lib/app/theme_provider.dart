@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 /// Theme mode state notifier that persists user preference.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
@@ -94,11 +95,11 @@ extension ThemeModeExtension on ThemeMode {
   IconData get icon {
     switch (this) {
       case ThemeMode.system:
-        return Icons.brightness_auto;
+        return LucideIcons.monitor;
       case ThemeMode.light:
-        return Icons.light_mode;
+        return LucideIcons.sun;
       case ThemeMode.dark:
-        return Icons.dark_mode;
+        return LucideIcons.moon;
     }
   }
 }

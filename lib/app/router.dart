@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,6 +8,61 @@ import '../features/conversations/presentation/screens/screens.dart';
 import '../features/dashboard/presentation/screens/screens.dart';
 import '../features/projects/presentation/screens/screens.dart';
 import '../features/sharing/presentation/screens/screens.dart';
+
+/// Fade-through page transition for top-level routes.
+CustomTransitionPage<void> _fadeThroughPage({
+  required LocalKey key,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: key,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 300),
+    reverseTransitionDuration: const Duration(milliseconds: 250),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        ),
+        child: child,
+      );
+    },
+  );
+}
+
+/// Slide-up page transition for detail/push routes.
+CustomTransitionPage<void> _slideUpPage({
+  required LocalKey key,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: key,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 350),
+    reverseTransitionDuration: const Duration(milliseconds: 300),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final offsetAnimation = Tween<Offset>(
+        begin: const Offset(0, 0.08),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      ));
+
+      return SlideTransition(
+        position: offsetAnimation,
+        child: FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOut,
+          ),
+          child: child,
+        ),
+      );
+    },
+  );
+}
 
 /// App route paths.
 class AppRoutes {
@@ -85,75 +141,108 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     routes: [
       // ============================================
-      // Auth Routes
+      // Auth Routes (fade transitions)
       // ============================================
       GoRoute(
         path: AppRoutes.splash,
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (context, state) => _fadeThroughPage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => _fadeThroughPage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) => _fadeThroughPage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
-        builder: (context, state) => const ForgotPasswordScreen(),
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const ForgotPasswordScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.verifyResetCode,
-        builder: (context, state) => const VerifyResetCodeScreen(),
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const VerifyResetCodeScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.resetPassword,
-        builder: (context, state) => const ResetPasswordScreen(),
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const ResetPasswordScreen(),
+        ),
       ),
       
       // ============================================
-      // Main App Routes (with bottom navigation)
+      // Main App Routes (fade transition)
       // ============================================
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const MainShell(),
+        pageBuilder: (context, state) => _fadeThroughPage(
+          key: state.pageKey,
+          child: const MainShell(),
+        ),
       ),
       
       // ============================================
-      // Project Routes
+      // Project Routes (slide-up detail)
       // ============================================
       GoRoute(
         path: AppRoutes.projectDetail,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final projectId = state.pathParameters['id']!;
-          return ProjectDetailScreen(projectId: projectId);
+          return _slideUpPage(
+            key: state.pageKey,
+            child: ProjectDetailScreen(projectId: projectId),
+          );
         },
       ),
       
       // ============================================
-      // Conversation Routes
+      // Conversation Routes (slide-up detail)
       // ============================================
       GoRoute(
         path: AppRoutes.chat,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final conversationId = state.pathParameters['id']!;
-          return ChatScreen(conversationId: conversationId);
+          return _slideUpPage(
+            key: state.pageKey,
+            child: ChatScreen(conversationId: conversationId),
+          );
         },
       ),
       
       // ============================================
-      // Sharing Routes
+      // Sharing Routes (slide-up)
       // ============================================
       GoRoute(
         path: AppRoutes.myShares,
-        builder: (context, state) => const MySharesScreen(),
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const MySharesScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.sharedConversationPath,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final token = state.pathParameters['token']!;
-          return SharedConversationScreen(shareToken: token);
+          return _slideUpPage(
+            key: state.pageKey,
+            child: SharedConversationScreen(shareToken: token),
+          );
         },
       ),
     ],

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/widgets.dart';
 import '../../../sharing/presentation/widgets/share_conversation_sheet.dart';
 import '../../domain/entities/entities.dart';
 import '../providers/providers.dart';
@@ -105,76 +107,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildLoadingScaffold(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Center(
-        child: CircularProgressIndicator(
-          color: colorScheme.primary,
-          strokeWidth: 2,
-        ),
-      ),
+      body: const ShimmerChatMessages(),
     );
   }
 
   Widget _buildErrorScaffold(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                LucideIcons.alertCircle,
-                  size: 32,
-                  color: colorScheme.onErrorContainer,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Something went wrong',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              FilledButton.icon(
-                onPressed: () => ref
-                    .read(chatNotifierProvider(widget.conversationId))
-                    .loadChat(),
-                icon: const Icon(LucideIcons.refreshCw, size: 18),
-                label: const Text('Try again'),
-              ),
-            ],
-          ),
-        ),
+      body: ErrorState(
+        message: message,
+        onRetry: () => ref
+            .read(chatNotifierProvider(widget.conversationId))
+            .loadChat(),
       ),
     );
   }
@@ -282,6 +234,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _sendMessage(String content, {ChatAttachment? attachment}) {
+    HapticFeedback.lightImpact();
     ref
         .read(chatNotifierProvider(widget.conversationId))
         .sendMessageStreaming(
@@ -583,27 +536,9 @@ class _EmptyChat extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // AI Logo
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.secondary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                LucideIcons.sparkles,
-                size: 36,
-                color: Colors.white,
-              ),
-            ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+            const AppLogo(size: 72)
+                .animate()
+                .scale(duration: 400.ms, curve: Curves.elasticOut),
             const SizedBox(height: AppSpacing.lg),
 
             // Welcome text

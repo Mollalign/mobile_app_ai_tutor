@@ -5,7 +5,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../domain/entities/entities.dart';
 
 /// Card displaying a conversation in the list.
-/// Clean, minimal design inspired by modern chat apps.
+/// Modern design with avatar, swipe-to-delete, and accent gradient.
 class ConversationCard extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
@@ -21,101 +21,194 @@ class ConversationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Widget card = _ConversationCardContent(
+      conversation: conversation,
+      onTap: onTap,
+      onDelete: onDelete,
+    );
+
+    if (onDelete != null) {
+      card = Dismissible(
+        key: ValueKey(conversation.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          onDelete!();
+          return false;
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 24),
+          decoration: BoxDecoration(
+            color: colorScheme.error.withAlpha(isDark ? 51 : 26),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Icon(
+            LucideIcons.trash2,
+            color: colorScheme.error,
+            size: 22,
+          ),
+        ),
+        child: card,
+      );
+    }
+
+    return card;
+  }
+}
+
+class _ConversationCardContent extends StatelessWidget {
+  final Conversation conversation;
+  final VoidCallback onTap;
+  final VoidCallback? onDelete;
+
+  const _ConversationCardContent({
+    required this.conversation,
+    required this.onTap,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final accentColor = conversation.isProjectChat
+        ? colorScheme.primary
+        : colorScheme.secondary;
 
     return Material(
-      color: colorScheme.surfaceContainerHighest,
+      color: isDark
+          ? colorScheme.surfaceContainerHighest
+          : colorScheme.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onTap,
         onLongPress: onDelete,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: isDark
+                  ? colorScheme.outlineVariant.withAlpha(38)
+                  : colorScheme.outlineVariant,
+            ),
+          ),
           child: Row(
             children: [
-              // Chat type indicator (colored dot)
+              // Chat type avatar
               Container(
-                width: 10,
-                height: 10,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: conversation.isProjectChat
-                      ? colorScheme.primary
-                      : colorScheme.secondary,
-                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor.withAlpha(isDark ? 51 : 26),
+                      accentColor.withAlpha(isDark ? 26 : 13),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  conversation.isProjectChat
+                      ? LucideIcons.bookOpen
+                      : LucideIcons.sparkles,
+                  size: 22,
+                  color: accentColor,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: 14),
 
               // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
                     Text(
                       conversation.displayTitle,
                       style: textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-
-                    // Metadata row
                     Row(
                       children: [
-                        // Chat type
                         Text(
                           conversation.isProjectChat ? 'Project' : 'Quick',
                           style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-
-                        // Separator
                         Text(
-                          ' · ',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                        ),
-
-                        // Message count
-                        Text(
-                          '${conversation.messageCount} messages',
+                          ' · ${conversation.messageCount} msgs',
                           style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                              ),
+                          ),
                         ),
-
-                        // Socratic indicator
                         if (conversation.isSocratic) ...[
-                          Text(
-                            ' · ',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.tertiary.withAlpha(isDark ? 38 : 26),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.graduationCap,
+                                  size: 10,
+                                  color: colorScheme.tertiary,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Socratic',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    fontSize: 9,
+                                    color: colorScheme.tertiary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Icon(
-                            LucideIcons.graduationCap,
-                            size: 12,
-                            color: colorScheme.tertiary,
-                          ),
                         ],
-                        ],
+                      ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
 
-              // Time
-              Text(
-                conversation.lastActivityRelative,
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              // Time + chevron
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    conversation.lastActivityRelative,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Icon(
+                    LucideIcons.chevronRight,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant.withAlpha(128),
+                  ),
+                ],
               ),
             ],
           ),

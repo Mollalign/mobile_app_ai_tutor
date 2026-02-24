@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -8,12 +9,18 @@ import 'projects_tab.dart';
 import 'chat_tab.dart';
 import 'profile_tab.dart';
 
-/// Main shell with bottom navigation.
-/// 
-/// This is the primary scaffold that contains all authenticated screens.
-/// Uses IndexedStack to preserve state when switching tabs.
+/// Main shell with a modern floating bottom navigation.
+///
+/// Uses IndexedStack to preserve tab state.
 class MainShell extends ConsumerWidget {
   const MainShell({super.key});
+
+  static const _navItems = [
+    _NavItem(icon: LucideIcons.home, activeIcon: LucideIcons.home, label: 'Home'),
+    _NavItem(icon: LucideIcons.folderOpen, activeIcon: LucideIcons.folder, label: 'Projects'),
+    _NavItem(icon: LucideIcons.messageCircle, activeIcon: LucideIcons.messageSquare, label: 'Chat'),
+    _NavItem(icon: LucideIcons.user, activeIcon: LucideIcons.userCircle, label: 'Profile'),
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +28,6 @@ class MainShell extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentIndex = ref.watch(tabControllerProvider);
 
-    // Tabs are kept in memory via IndexedStack to preserve state
     const tabs = [
       HomeTab(),
       ProjectsTab(),
@@ -34,44 +40,124 @@ class MainShell extends ConsumerWidget {
         index: currentIndex,
         children: tabs,
       ),
+      extendBody: true,
       bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: isDark 
-                  ? colorScheme.outlineVariant.withAlpha(51)
-                  : colorScheme.outlineVariant,
-              width: 0.5,
+          color: isDark
+              ? colorScheme.surfaceContainerHighest
+              : colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark
+                ? colorScheme.outlineVariant.withAlpha(38)
+                : colorScheme.outlineVariant.withAlpha(128),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(isDark ? 51 : 20),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(_navItems.length, (index) {
+                final item = _navItems[index];
+                final isSelected = currentIndex == index;
+
+                return _NavBarItem(
+                  item: item,
+                  isSelected: isSelected,
+                  onTap: () {
+                    if (currentIndex != index) {
+                      HapticFeedback.lightImpact();
+                    }
+                    ref.read(tabControllerProvider.notifier).setTab(index);
+                  },
+                );
+              }),
             ),
           ),
         ),
-        child: NavigationBar(
-          selectedIndex: currentIndex,
-          onDestinationSelected: (index) {
-            ref.read(tabControllerProvider.notifier).setTab(index);
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(LucideIcons.home),
-              selectedIcon: Icon(LucideIcons.home),
-              label: 'Home',
+      ),
+    );
+  }
+}
+
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
+}
+
+class _NavBarItem extends StatelessWidget {
+  final _NavItem item;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavBarItem({
+    required this.item,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withAlpha(26)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? item.activeIcon : item.icon,
+                key: ValueKey(isSelected),
+                size: 22,
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
             ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.folderOpen),
-              selectedIcon: Icon(LucideIcons.folderOpen),
-              label: 'Projects',
-            ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.messageCircle),
-              selectedIcon: Icon(LucideIcons.messageCircle),
-              label: 'Chat',
-            ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.user),
-              selectedIcon: Icon(LucideIcons.user),
-              label: 'Profile',
-            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                item.label,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ],
         ),
       ),

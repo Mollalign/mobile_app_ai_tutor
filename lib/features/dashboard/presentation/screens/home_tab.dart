@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../app/theme_provider.dart';
+import '../../../../shared/widgets/widgets.dart';
 import '../../../auth/presentation/providers/providers.dart';
 import '../../../conversations/presentation/providers/providers.dart';
 import '../../../conversations/presentation/widgets/widgets.dart';
@@ -34,7 +35,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final authState = ref.watch(authNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final stats = ref.watch(dashboardStatsProvider);
 
     final user = authState.whenOrNull(
@@ -61,36 +61,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 title: Row(
                   children: [
-                    // Logo with gradient
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            colorScheme.primary,
-                            colorScheme.secondary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: isDark
-                            ? [
-                                BoxShadow(
-                                  color: colorScheme.primary.withAlpha(51),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: const Icon(
-                        LucideIcons.sparkles,
-                        size: 22,
-                        color: Colors.white,
-                      ),
-                    ),
+                    const AppLogo(size: 40),
                     const SizedBox(width: 12),
                     Text(
                       'AI Tutor',
@@ -623,42 +594,15 @@ class _RecentConversationsList extends ConsumerWidget {
   }
 
   Widget _buildLoading(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
+    return Column(
+      children: List.generate(3, (_) => const ShimmerHomeTile()),
     );
   }
 
   Widget _buildEmpty(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(128),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            LucideIcons.messageCircle,
-            color: colorScheme.onSurfaceVariant,
-            size: 24,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return EmptyStateCompact(
+      icon: LucideIcons.messageCircle,
+      message: message,
     );
   }
 }
@@ -702,42 +646,15 @@ class _ProjectsList extends ConsumerWidget {
   }
 
   Widget _buildLoading(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
+    return Column(
+      children: List.generate(2, (_) => const ShimmerHomeTile()),
     );
   }
 
   Widget _buildEmpty(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(128),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            LucideIcons.folderOpen,
-            color: colorScheme.onSurfaceVariant,
-            size: 24,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return EmptyStateCompact(
+      icon: LucideIcons.folderOpen,
+      message: message,
     );
   }
 }

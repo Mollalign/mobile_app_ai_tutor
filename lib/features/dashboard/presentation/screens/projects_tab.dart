@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/widgets.dart';
 import '../../../projects/presentation/providers/providers.dart';
 import '../../../projects/presentation/widgets/project_card.dart';
 import '../../../projects/presentation/widgets/create_project_sheet.dart';
@@ -96,25 +97,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: AppSpacing.md,
-        crossAxisSpacing: AppSpacing.md,
-        childAspectRatio: 1.0,
-      ),
-      itemCount: 6,
-      itemBuilder: (context, index) => Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: AppRadius.borderRadiusMd,
-        ),
-      ).animate(onPlay: (c) => c.repeat())
-          .shimmer(duration: 1500.ms, color: colorScheme.surface),
-    );
+    return const ShimmerProjectGrid(itemCount: 6);
   }
 }
 
@@ -125,51 +108,12 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withAlpha(100),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                LucideIcons.folderOpen,
-                size: 48,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'No projects yet',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Create your first project to organize\nyour study materials and conversations.',
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: onCreateProject,
-              icon: const Icon(LucideIcons.plus),
-              label: const Text('Create Project'),
-            ),
-          ],
-        ).animate().fadeIn().slideY(begin: 0.1, end: 0),
-      ),
+    return EmptyState(
+      icon: LucideIcons.folderOpen,
+      title: 'No projects yet',
+      subtitle: 'Create your first project to organize\nyour study materials and conversations.',
+      actionLabel: 'Create Project',
+      onAction: onCreateProject,
     );
   }
 }
@@ -182,52 +126,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                LucideIcons.alertCircle,
-                size: 48,
-                color: colorScheme.error,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Something went wrong',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(LucideIcons.refreshCw),
-              label: const Text('Try Again'),
-            ),
-          ],
-        ),
-      ),
-    );
+    return ErrorState(message: message, onRetry: onRetry);
   }
 }
 
@@ -279,11 +178,19 @@ class _ProjectsGridView extends ConsumerWidget {
           return ProjectGridCard(
             project: project,
             onTap: () {
-              debugPrint('Navigating to project: ${project.id}');
               context.push('/projects/${project.id}');
             },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
-          );
+          )
+              .animate()
+              .fadeIn(delay: (50 * index).ms, duration: 300.ms)
+              .scale(
+                begin: const Offset(0.95, 0.95),
+                end: const Offset(1, 1),
+                delay: (50 * index).ms,
+                duration: 300.ms,
+                curve: Curves.easeOutCubic,
+              );
         },
       ),
     );
@@ -332,11 +239,19 @@ class _ProjectsListView extends ConsumerWidget {
           return ProjectListTile(
             project: project,
             onTap: () {
-              debugPrint('Navigating to project: ${project.id}');
               context.push('/projects/${project.id}');
             },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
-          );
+          )
+              .animate()
+              .fadeIn(delay: (50 * index).ms, duration: 300.ms)
+              .slideX(
+                begin: 0.05,
+                end: 0,
+                delay: (50 * index).ms,
+                duration: 300.ms,
+                curve: Curves.easeOutCubic,
+              );
         },
       ),
     );

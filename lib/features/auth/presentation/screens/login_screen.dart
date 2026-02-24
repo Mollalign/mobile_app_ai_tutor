@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/widgets.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
@@ -86,19 +88,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   const SizedBox(height: AppSpacing.xxl),
 
-                  // Header with logo
-                  Container(
-                    padding: AppSpacing.paddingAllMd,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.school_rounded,
-                      size: 48,
-                      color: colorScheme.primary,
-                    ),
-                  ),
+                  // Branded logo
+                  const Center(
+                    child: AppLogo(size: 72),
+                  ).animate().scale(
+                        duration: 500.ms,
+                        curve: Curves.elasticOut,
+                      ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Welcome text
@@ -109,7 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
-                  ),
+                  ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Sign in to continue learning',
@@ -117,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
-                  ),
+                  ).animate().fadeIn(delay: 250.ms, duration: 400.ms),
                   const SizedBox(height: AppSpacing.xxl),
 
                   // Email field
@@ -130,7 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     validator: Validators.email,
                     enabled: !isLoading,
                     textInputAction: TextInputAction.next,
-                  ),
+                  ).animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: AppSpacing.md),
 
                   // Password field
@@ -155,7 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     enabled: !isLoading,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _handleLogin(),
-                  ),
+                  ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Login button
@@ -163,7 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: isLoading ? null : _handleLogin,
                     isLoading: isLoading,
                     label: 'Sign In',
-                  ),
+                  ).animate().fadeIn(delay: 550.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: AppSpacing.md),
 
                   // Forgot password link
