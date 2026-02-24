@@ -211,6 +211,7 @@ class Conversation {
   final int messageCount;
   final DateTime? lastMessageAt;
   final ChatType chatType;
+  final String? lastMessagePreview;
 
   const Conversation({
     required this.id,
@@ -224,6 +225,7 @@ class Conversation {
     required this.messageCount,
     this.lastMessageAt,
     required this.chatType,
+    this.lastMessagePreview,
   });
 
   /// Display title (auto-generated if none).
@@ -263,7 +265,7 @@ class Conversation {
 class ConversationDetail extends Conversation {
   final List<Message> messages;
 
-  const ConversationDetail({
+  ConversationDetail({
     required super.id,
     required super.userId,
     super.projectId,
@@ -276,15 +278,14 @@ class ConversationDetail extends Conversation {
     super.lastMessageAt,
     required super.chatType,
     required this.messages,
-  });
+  }) : super(lastMessagePreview: _buildPreview(messages));
 
-  /// Get the last message preview.
-  String? get lastMessagePreview {
+  static String? _buildPreview(List<Message> messages) {
     if (messages.isEmpty) return null;
     final lastMessage = messages.last;
     final preview = lastMessage.content;
-    if (preview.length > 100) {
-      return '${preview.substring(0, 100)}...';
+    if (preview.length > 80) {
+      return '${preview.substring(0, 80)}...';
     }
     return preview;
   }

@@ -33,7 +33,7 @@ class ProfileTab extends ConsumerWidget {
         slivers: [
           // Gradient header with user info
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 260,
             floating: false,
             pinned: true,
             backgroundColor: colorScheme.surface,
@@ -50,10 +50,11 @@ class ProfileTab extends ConsumerWidget {
                   ),
                 ),
                 child: SafeArea(
+                  bottom: false,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.lg,
-                      AppSpacing.xl,
+                      AppSpacing.md,
                       AppSpacing.lg,
                       AppSpacing.lg,
                     ),
@@ -62,11 +63,11 @@ class ProfileTab extends ConsumerWidget {
                       children: [
                         // Avatar
                         Container(
-                          width: 80,
-                          height: 80,
+                          width: 76,
+                          height: 76,
                           decoration: BoxDecoration(
                             color: Colors.white.withAlpha(38),
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(
                               color: Colors.white.withAlpha(77),
                               width: 2,
@@ -82,7 +83,7 @@ class ProfileTab extends ConsumerWidget {
                             ),
                           ),
                         ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                        const SizedBox(height: AppSpacing.md),
+                        const SizedBox(height: AppSpacing.sm),
                         Text(
                           user?.fullName ?? 'User',
                           style: textTheme.titleLarge?.copyWith(

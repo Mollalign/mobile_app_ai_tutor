@@ -138,6 +138,18 @@ class _ConversationCardContent extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (conversation.lastMessagePreview != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        conversation.lastMessagePreview!,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withAlpha(179),
+                          height: 1.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Row(
                       children: [

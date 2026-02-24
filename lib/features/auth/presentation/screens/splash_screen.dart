@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/widgets.dart';
@@ -114,15 +115,16 @@ class SplashScreen extends ConsumerWidget {
       child: Column(
         children: [
           Container(
-            padding: AppSpacing.paddingAllMd,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               color: colorScheme.errorContainer,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
-              Icons.error_outline,
+              LucideIcons.alertTriangle,
               color: colorScheme.error,
-              size: 32,
+              size: 28,
             ),
           ),
           const SizedBox(height: AppSpacing.md),

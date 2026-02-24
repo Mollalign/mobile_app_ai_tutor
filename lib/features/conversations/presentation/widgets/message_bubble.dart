@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../shared/widgets/widgets.dart';
 import '../../domain/entities/entities.dart';
 
 /// Message bubble widget for displaying chat messages.
@@ -162,7 +163,6 @@ class _AssistantMessageState extends State<_AssistantMessage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -184,36 +184,7 @@ class _AssistantMessageState extends State<_AssistantMessage> {
             // AI Avatar & Label
             Row(
               children: [
-                // Glowing AI avatar
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.secondary,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: isDark
-                        ? [
-                            BoxShadow(
-                              color: colorScheme.primary.withAlpha(77),
-                              blurRadius: 12,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: const Icon(
-                    LucideIcons.sparkles,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ),
+                const AppLogo(size: 32),
                 const SizedBox(width: 12),
                 Text(
                   'AI Tutor',
@@ -242,6 +213,9 @@ class _AssistantMessageState extends State<_AssistantMessage> {
                       data: widget.message.content,
                       selectable: true,
                       styleSheet: _buildMarkdownStyleSheet(context),
+                      builders: {
+                        'code': _CodeBlockBuilder(context: context),
+                      },
                     ),
                   ),
 
@@ -547,6 +521,125 @@ class _SourcesSection extends StatefulWidget {
 
   @override
   State<_SourcesSection> createState() => _SourcesSectionState();
+}
+
+/// Custom code block builder with header (language label + copy button).
+class _CodeBlockBuilder extends MarkdownElementBuilder {
+  final BuildContext context;
+
+  _CodeBlockBuilder({required this.context});
+
+  @override
+  Widget? visitElementAfter(element, preferredStyle) {
+    final code = element.textContent.trimRight();
+
+    String? language;
+    if (element.attributes.containsKey('class')) {
+      language = element.attributes['class']?.replaceFirst('language-', '');
+    }
+
+    // Only custom-render fenced code blocks (multi-line)
+    if (!code.contains('\n')) return null;
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? colorScheme.outlineVariant : colorScheme.outline.withAlpha(77),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header with language label + copy button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withAlpha(10)
+                  : colorScheme.outline.withAlpha(20),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.code2,
+                  size: 14,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  language ?? 'code',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(LucideIcons.check, size: 16, color: colorScheme.onInverseSurface),
+                            const SizedBox(width: 8),
+                            const Text('Code copied'),
+                          ],
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.copy,
+                        size: 13,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Copy',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Code content
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              code,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 13,
+                height: 1.6,
+                color: isDark ? const Color(0xFFD4D4D4) : colorScheme.onSurface,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SourcesSectionState extends State<_SourcesSection> {

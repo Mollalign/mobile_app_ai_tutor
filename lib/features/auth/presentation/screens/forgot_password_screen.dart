@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
@@ -61,7 +63,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () {
             ref.read(passwordResetNotifierProvider.notifier).reset();
             context.go(AppRoutes.login);
@@ -92,17 +94,25 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
                   // Icon
                   Container(
-                    padding: AppSpacing.paddingAllMd,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary.withAlpha(26),
+                          colorScheme.secondary.withAlpha(26),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Icon(
-                      Icons.lock_reset,
-                      size: 48,
+                      LucideIcons.keyRound,
+                      size: 36,
                       color: colorScheme.primary,
                     ),
-                  ),
+                  ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Title
@@ -113,7 +123,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
-                  ),
+                  ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
                   const SizedBox(height: AppSpacing.sm),
 
                   // Description
@@ -123,7 +133,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
-                  ),
+                  ).animate().fadeIn(delay: 250.ms, duration: 400.ms),
                   const SizedBox(height: AppSpacing.xl),
 
                   // Email field
@@ -137,7 +147,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     enabled: !isLoading,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _handleSubmit(),
-                  ),
+                  ).animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Submit button
@@ -145,7 +155,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     onPressed: isLoading ? null : _handleSubmit,
                     isLoading: isLoading,
                     label: 'Send Reset Code',
-                  ),
+                  ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                 ],
               ),
             ),

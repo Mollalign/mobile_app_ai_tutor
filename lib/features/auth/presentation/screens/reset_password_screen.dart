@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
@@ -81,15 +83,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             barrierDismissible: false,
             builder: (context) => AlertDialog(
               icon: Container(
-                padding: AppSpacing.paddingAllMd,
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
-                  color: colorScheme.tertiaryContainer,
-                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.tertiary.withAlpha(26),
+                      colorScheme.primary.withAlpha(26),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
-                  Icons.check_circle,
+                  LucideIcons.checkCircle,
                   color: colorScheme.tertiary,
-                  size: 48,
+                  size: 32,
                 ),
               ),
               title: const Text('Password Reset!'),
@@ -130,7 +138,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () {
             ref.read(passwordResetNotifierProvider.notifier).goBack();
             context.go(AppRoutes.verifyResetCode);
@@ -161,17 +169,25 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                   // Icon
                   Container(
-                    padding: AppSpacing.paddingAllMd,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
-                      color: colorScheme.tertiaryContainer,
-                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.tertiary.withAlpha(26),
+                          colorScheme.primary.withAlpha(26),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Icon(
-                      Icons.lock_outline,
-                      size: 48,
+                      LucideIcons.shieldCheck,
+                      size: 36,
                       color: colorScheme.tertiary,
                     ),
-                  ),
+                  ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Title
@@ -182,7 +198,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
-                  ),
+                  ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
                   const SizedBox(height: AppSpacing.sm),
 
                   // Description
@@ -192,7 +208,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
-                  ),
+                  ).animate().fadeIn(delay: 250.ms, duration: 400.ms),
                   const SizedBox(height: AppSpacing.xl),
 
                   // New password field
@@ -216,7 +232,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     validator: Validators.password,
                     enabled: !isLoading,
                     textInputAction: TextInputAction.next,
-                  ),
+                  ).animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: AppSpacing.md),
 
                   // Confirm password field
@@ -246,7 +262,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     onFieldSubmitted: email != null && code != null 
                         ? (_) => _handleSubmit(email!, code!) 
                         : null,
-                  ),
+                  ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Submit button
@@ -256,7 +272,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         : () => _handleSubmit(email!, code!),
                     isLoading: isLoading,
                     label: 'Reset Password',
-                  ),
+                  ).animate().fadeIn(delay: 550.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                 ],
               ),
             ),
