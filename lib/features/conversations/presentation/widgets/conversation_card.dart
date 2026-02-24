@@ -153,47 +153,30 @@ class _ConversationCardContent extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text(
-                          conversation.isProjectChat ? 'Project' : 'Quick',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        Text(
-                          ' · ${conversation.messageCount} msgs',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                        Flexible(
+                          child: Text(
+                            '${conversation.isProjectChat ? 'Project' : 'Quick'} · ${conversation.messageCount} msgs',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (conversation.isSocratic) ...[
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
+                              horizontal: 5,
                               vertical: 1,
                             ),
                             decoration: BoxDecoration(
                               color: colorScheme.tertiary.withAlpha(isDark ? 38 : 26),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  LucideIcons.graduationCap,
-                                  size: 10,
-                                  color: colorScheme.tertiary,
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'Socratic',
-                                  style: textTheme.labelSmall?.copyWith(
-                                    fontSize: 9,
-                                    color: colorScheme.tertiary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                            child: Icon(
+                              LucideIcons.graduationCap,
+                              size: 10,
+                              color: colorScheme.tertiary,
                             ),
                           ),
                         ],

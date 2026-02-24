@@ -83,10 +83,13 @@ class ProjectsTab extends ConsumerWidget {
               .loadProjects(refresh: true),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => CreateProjectSheet.show(context),
-        icon: const Icon(LucideIcons.plus),
-        label: const Text('New Project'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.extended(
+          onPressed: () => CreateProjectSheet.show(context),
+          icon: const Icon(LucideIcons.plus),
+          label: const Text('New Project'),
+        ),
       ),
     );
   }

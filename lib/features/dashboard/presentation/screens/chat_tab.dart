@@ -154,11 +154,14 @@ class _ChatTabState extends ConsumerState<ChatTab> {
               ],
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-        heroTag: 'chat_fab',
-        onPressed: _createNewChat,
-            child: const Icon(LucideIcons.plus),
-      ),
+          floatingActionButton: Padding(
+            padding: const EdgeInsets.only(bottom: 72),
+            child: FloatingActionButton(
+              heroTag: 'chat_fab',
+              onPressed: _createNewChat,
+              child: const Icon(LucideIcons.plus),
+            ),
+          ),
         );
       },
     );

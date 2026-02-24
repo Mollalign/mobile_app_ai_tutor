@@ -136,30 +136,34 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
   Widget _buildLoadedScaffold(BuildContext context, Project project) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 180,
+              expandedHeight: 160,
               floating: false,
               pinned: true,
-              forceElevated: innerBoxIsScrolled,
-              backgroundColor: innerBoxIsScrolled ? colorScheme.surface : Colors.transparent,
-              foregroundColor: innerBoxIsScrolled ? colorScheme.onSurface : Colors.white,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: Colors.transparent,
               title: innerBoxIsScrolled ? Text(project.name) : null,
               actions: [
                 IconButton(
                   onPressed: () => ProjectActionsSheet.show(context, project),
-                  icon: const Icon(LucideIcons.moreVertical),
+                  icon: Icon(
+                    LucideIcons.moreVertical,
+                    color: innerBoxIsScrolled ? null : Colors.white,
+                  ),
                 ),
               ],
-              iconTheme: IconThemeData(
-                color: innerBoxIsScrolled ? colorScheme.onSurface : Colors.white,
-              ),
-              actionsIconTheme: IconThemeData(
-                color: innerBoxIsScrolled ? colorScheme.onSurface : Colors.white,
+              leading: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Icon(
+                  LucideIcons.arrowLeft,
+                  color: innerBoxIsScrolled ? null : Colors.white,
+                ),
               ),
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
@@ -169,126 +173,118 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                       end: Alignment.bottomRight,
                       colors: [
                         colorScheme.primary,
-                        colorScheme.primary.withAlpha(200),
+                        Color.lerp(colorScheme.primary, colorScheme.secondary, 0.5)!,
                       ],
                     ),
                   ),
-                  child: Stack(
-                    children: [
-                      // Scrim gradient at the top for better icon visibility
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 120,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withAlpha(77),  // ~30% opacity
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.xxl,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
                       ),
-                      // Content
-                      SafeArea(
-                        bottom: false,
-                        child: Padding(
-                          // Add bottom padding to account for TabBar height (~72px with icon+text)
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.lg,
-                            AppSpacing.lg,
-                            AppSpacing.lg,
-                            80, // Space for TabBar
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.end,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(AppSpacing.sm),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withAlpha(50),
-                                      borderRadius: AppRadius.borderRadiusSm,
-                                    ),
-                                    child: Icon(
-                                      project.isArchived
-                                          ? LucideIcons.archive
-                                          : LucideIcons.folder,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        if (project.isArchived)
-                                          Container(
-                                            margin: const EdgeInsets.only(bottom: 4),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.sm,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withAlpha(30),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              'Archived',
-                                              style: textTheme.labelSmall?.copyWith(
-                                                color: Colors.white.withAlpha(200),
-                                              ),
-                                            ),
-                                          ),
-                                        Text(
-                                          project.name,
-                                          style: textTheme.headlineSmall?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withAlpha(38),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  project.isArchived
+                                      ? LucideIcons.archive
+                                      : LucideIcons.folder,
+                                  size: 22,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (project.isArchived)
+                                      Container(
+                                        margin: const EdgeInsets.only(bottom: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
                                         ),
-                                      ],
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha(30),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          'Archived',
+                                          style: textTheme.labelSmall?.copyWith(
+                                            color: Colors.white.withAlpha(200),
+                                          ),
+                                        ),
+                                      ),
+                                    Text(
+                                      project.name,
+                                      style: textTheme.headlineSmall?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: colorScheme.outlineVariant.withAlpha(isDark ? 38 : 77),
+                      ),
+                    ),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: colorScheme.primary,
+                    unselectedLabelColor: colorScheme.onSurfaceVariant,
+                    indicatorColor: colorScheme.primary,
+                    indicatorWeight: 3,
+                    labelStyle: textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    tabs: const [
+                      Tab(
+                        icon: Icon(LucideIcons.layoutDashboard, size: 18),
+                        text: 'Overview',
+                      ),
+                      Tab(
+                        icon: Icon(LucideIcons.fileText, size: 18),
+                        text: 'Documents',
+                      ),
+                      Tab(
+                        icon: Icon(LucideIcons.messageSquare, size: 18),
+                        text: 'Chats',
                       ),
                     ],
                   ),
                 ),
-              ),
-              bottom: TabBar(
-                controller: _tabController,
-                labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurfaceVariant,
-                indicatorColor: colorScheme.primary,
-                tabs: const [
-                  Tab(
-                    icon: Icon(LucideIcons.layoutDashboard, size: 18),
-                    text: 'Overview',
-                  ),
-                  Tab(
-                    icon: Icon(LucideIcons.fileText, size: 18),
-                    text: 'Documents',
-                  ),
-                  Tab(
-                    icon: Icon(LucideIcons.messageSquare, size: 18),
-                    text: 'Chats',
-                  ),
-                ],
               ),
             ),
           ];
