@@ -32,14 +32,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final stats = ref.watch(dashboardStatsProvider);
-
-    final user = authState.whenOrNull(
-      authenticated: (user) => user,
-    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -48,7 +42,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         color: colorScheme.primary,
         child: CustomScrollView(
           slivers: [
-            // Modern App Bar
             SliverAppBar(
               expandedHeight: 70,
               floating: true,
@@ -77,25 +70,16 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 const SizedBox(width: 8),
               ],
             ),
-
-            // Content
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Welcome Section
-                  _WelcomeCard(userName: user?.firstName ?? 'Scholar'),
+                  const _WelcomeCardConnected(),
                   const SizedBox(height: 24),
-
-                  // Quick Actions
-                  _QuickActionsSection(ref: ref),
+                  const _QuickActionsSection(),
                   const SizedBox(height: 28),
-
-                  // Stats Section
-                  _StatsSection(stats: stats),
+                  const _StatsSectionConnected(),
                   const SizedBox(height: 28),
-
-                  // Recent Conversations
                   _RecentSection(
                     title: 'Recent Conversations',
                     onViewAll: () {
@@ -104,8 +88,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                     child: const _RecentConversationsList(),
                   ),
                   const SizedBox(height: 28),
-
-                  // Projects Overview
                   _RecentSection(
                     title: 'Your Projects',
                     onViewAll: () {
@@ -120,6 +102,21 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         ),
       ),
     );
+  }
+}
+
+/// Watches only the user's first name from auth state.
+class _WelcomeCardConnected extends ConsumerWidget {
+  const _WelcomeCardConnected();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userName = ref.watch(
+      authNotifierProvider.select((state) =>
+          state.whenOrNull(authenticated: (user) => user.firstName) ??
+          'Scholar'),
+    );
+    return _WelcomeCard(userName: userName);
   }
 }
 
@@ -212,13 +209,11 @@ class _WelcomeCard extends StatelessWidget {
 }
 
 /// Quick actions section with modern cards.
-class _QuickActionsSection extends StatelessWidget {
-  final WidgetRef ref;
-
-  const _QuickActionsSection({required this.ref});
+class _QuickActionsSection extends ConsumerWidget {
+  const _QuickActionsSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -354,6 +349,17 @@ class _ModernActionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Watches dashboard stats independently.
+class _StatsSectionConnected extends ConsumerWidget {
+  const _StatsSectionConnected();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(dashboardStatsProvider);
+    return _StatsSection(stats: stats);
   }
 }
 

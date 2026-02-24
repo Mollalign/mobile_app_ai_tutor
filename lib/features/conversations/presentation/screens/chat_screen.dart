@@ -29,81 +29,69 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
-  int _lastMessageCount = 0;
+  ChatChangeNotifier? _notifier;
+  Type? _lastStateType;
+  String? _lastConversationTitle;
+  bool? _lastIsSocratic;
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _notifier = ref.read(chatNotifierProvider(widget.conversationId));
+      _notifier!.addListener(_onNotifierChanged);
+      _notifier!.loadChat();
+    });
+  }
 
   @override
   void dispose() {
+    _notifier?.removeListener(_onNotifierChanged);
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
+  /// Only triggers a top-level rebuild when the state TYPE changes
+  /// or conversation metadata (title/socratic) changes — not on every
+  /// streaming chunk. This keeps the Scaffold and AppBar stable.
+  void _onNotifierChanged() {
+    if (!mounted || _notifier == null) return;
+    final state = _notifier!.state;
+    final newType = state.runtimeType;
+
+    if (newType != _lastStateType) {
+      _lastStateType = newType;
+      if (state is ChatLoaded) {
+        _lastConversationTitle = state.conversation.title;
+        _lastIsSocratic = state.conversation.isSocratic;
+      }
+      setState(() {});
+      return;
+    }
+
+    if (state is ChatLoaded) {
+      if (state.conversation.title != _lastConversationTitle ||
+          state.conversation.isSocratic != _lastIsSocratic) {
+        _lastConversationTitle = state.conversation.title;
+        _lastIsSocratic = state.conversation.isSocratic;
+        setState(() {});
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final chatNotifier = ref.watch(chatNotifierProvider(widget.conversationId));
-    
-    return AnimatedBuilder(
-      animation: chatNotifier,
-      builder: (context, _) {
-        final chatState = chatNotifier.state;
+    final state = chatNotifier.state;
 
-        // Load chat if in initial state
-        chatState.whenOrNull(
-          initial: () {
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                debugPrint('ChatScreen: Loading chat...');
-                chatNotifier.loadChat();
-              }
-            });
-          },
-        );
-
-        // Scroll to bottom when new messages arrive or during streaming
-        if (chatState is ChatLoaded) {
-          if (chatState.isStreaming) {
-            debugPrint('ChatScreen: Streaming - content length: ${chatState.streamingContent?.length ?? 0}');
-          }
-          
-          if (chatState.messages.length > _lastMessageCount || chatState.isStreaming) {
-            if (chatState.messages.length > _lastMessageCount) {
-              _lastMessageCount = chatState.messages.length;
-            }
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _scrollToBottom();
-              }
-            });
-          }
-        }
-
-        return chatState.when(
-          initial: () => _buildLoadingScaffold(context),
-          loading: () => _buildLoadingScaffold(context),
-          loaded: (conversation, messages, isSending, isStreaming, streamingContent, pendingSources) {
-            debugPrint('ChatScreen: Loaded - messages: ${messages.length}, streaming: $isStreaming');
-            return _buildLoadedScaffold(
-              context,
-              conversation,
-              messages,
-              isSending || isStreaming,
-            );
-          },
-          error: (message) => _buildErrorScaffold(context, message),
-        );
-      },
-    );
+    if (state is ChatLoaded) {
+      return _buildLoadedScaffold(context, chatNotifier, state);
+    }
+    if (state is ChatError) {
+      return _buildErrorScaffold(context, state.message);
+    }
+    return _buildLoadingScaffold(context);
   }
 
   Widget _buildLoadingScaffold(BuildContext context) {
@@ -133,12 +121,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildLoadedScaffold(
     BuildContext context,
-    ConversationDetail conversation,
-    List<Message> messages,
-    bool isLoading,
+    ChatChangeNotifier chatNotifier,
+    ChatLoaded state,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final conversation = state.conversation;
 
     return Scaffold(
       appBar: AppBar(
@@ -150,7 +138,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-              // Chat type indicator
               Container(
                 width: 8,
                 height: 8,
@@ -181,7 +168,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ),
         actions: [
-          // More options
           IconButton(
             onPressed: () => _showOptionsMenu(context, conversation),
             icon: const Icon(LucideIcons.moreHorizontal),
@@ -191,42 +177,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Messages list
           Expanded(
-            child: messages.isEmpty
-                ? _EmptyChat(
-                    conversation: conversation,
-                    onSendMessage: (message) => _sendMessage(message),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(
-                      top: AppSpacing.sm,
-                      bottom: AppSpacing.sm,
-                    ),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      return MessageBubble(
-                        key: ValueKey('${message.id}-${message.content.length}'),
-                        message: message,
-                      );
-                    },
-                  ),
+            child: _ChatMessagesList(
+              chatNotifier: chatNotifier,
+              scrollController: _scrollController,
+              conversation: conversation,
+              onSendMessage: _sendMessage,
+            ),
           ),
-
-          // Chat input
-          ChatInput(
-            onSend: (content, {attachment}) => _sendMessage(content, attachment: attachment),
-            isLoading: isLoading,
-            isSocratic: conversation.isSocratic,
-            onToggleSocratic: () => ref
-                .read(chatNotifierProvider(widget.conversationId))
-                .toggleSocraticMode(),
-            hintText: conversation.isProjectChat
-                ? 'Ask about your documents...'
-                : 'Ask anything...',
-            enableImageAttachment: true,
+          _ChatInputWrapper(
+            chatNotifier: chatNotifier,
+            conversation: conversation,
+            onSendMessage: _sendMessage,
           ),
         ],
       ),
@@ -458,6 +420,126 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Scoped messages list — only this subtree rebuilds during streaming.
+class _ChatMessagesList extends StatefulWidget {
+  final ChatChangeNotifier chatNotifier;
+  final ScrollController scrollController;
+  final ConversationDetail conversation;
+  final void Function(String, {ChatAttachment? attachment}) onSendMessage;
+
+  const _ChatMessagesList({
+    required this.chatNotifier,
+    required this.scrollController,
+    required this.conversation,
+    required this.onSendMessage,
+  });
+
+  @override
+  State<_ChatMessagesList> createState() => _ChatMessagesListState();
+}
+
+class _ChatMessagesListState extends State<_ChatMessagesList> {
+  int _lastMessageCount = 0;
+
+  void _scrollToBottom() {
+    if (widget.scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!mounted) return;
+        widget.scrollController.animateTo(
+          widget.scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: widget.chatNotifier,
+      builder: (context, _) {
+        final state = widget.chatNotifier.state;
+        if (state is! ChatLoaded) return const SizedBox.shrink();
+
+        final messages = state.messages;
+
+        if (messages.length > _lastMessageCount || state.isStreaming) {
+          if (messages.length > _lastMessageCount) {
+            _lastMessageCount = messages.length;
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _scrollToBottom();
+          });
+        }
+
+        if (messages.isEmpty) {
+          return _EmptyChat(
+            conversation: widget.conversation,
+            onSendMessage: (msg) => widget.onSendMessage(msg),
+          );
+        }
+
+        return ListView.builder(
+          controller: widget.scrollController,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.sm,
+            bottom: AppSpacing.sm,
+          ),
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            final message = messages[index];
+            return RepaintBoundary(
+              child: MessageBubble(
+                key: ValueKey(message.id),
+                message: message,
+                animate: !message.isStreaming,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Scoped input bar — rebuilds only when isLoading changes.
+class _ChatInputWrapper extends StatelessWidget {
+  final ChatChangeNotifier chatNotifier;
+  final ConversationDetail conversation;
+  final void Function(String, {ChatAttachment? attachment}) onSendMessage;
+
+  const _ChatInputWrapper({
+    required this.chatNotifier,
+    required this.conversation,
+    required this.onSendMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: chatNotifier,
+      builder: (context, _) {
+        final state = chatNotifier.state;
+        final isLoading =
+            state is ChatLoaded && (state.isSending || state.isStreaming);
+
+        return ChatInput(
+          onSend: (content, {attachment}) =>
+              onSendMessage(content, attachment: attachment),
+          isLoading: isLoading,
+          isSocratic: conversation.isSocratic,
+          onToggleSocratic: () => chatNotifier.toggleSocraticMode(),
+          hintText: conversation.isProjectChat
+              ? 'Ask about your documents...'
+              : 'Ask anything...',
+          enableImageAttachment: true,
+        );
+      },
     );
   }
 }

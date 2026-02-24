@@ -40,7 +40,6 @@ class MainShell extends ConsumerWidget {
         index: currentIndex,
         children: tabs,
       ),
-      extendBody: true,
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         decoration: BoxDecoration(

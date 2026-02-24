@@ -103,16 +103,12 @@ class ChatChangeNotifier extends ChangeNotifier {
     _safeNotifyListeners();
 
     try {
-      debugPrint('Loading chat: conversationId=$_conversationId');
-      
       final conversation = await _repository.getConversation(_conversationId).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
           throw TimeoutException('Request timed out after 30 seconds');
         },
       );
-      
-      debugPrint('Loaded chat with ${conversation.messages.length} messages');
       
       _state = ChatState.loaded(
         conversation: conversation,
@@ -121,9 +117,7 @@ class ChatChangeNotifier extends ChangeNotifier {
       
       // Connect to WebSocket for real-time updates
       _connectWebSocket();
-    } catch (e, stackTrace) {
-      debugPrint('Error loading chat: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
       _state = ChatState.error(message: _getErrorMessage(e));
     } finally {
       _safeNotifyListeners();
@@ -136,13 +130,7 @@ class ChatChangeNotifier extends ChangeNotifier {
     _wsService.addListener(_conversationId, _handleWebSocketMessage);
     
     // Connect to WebSocket
-    _wsService.connect(_conversationId).then((connected) {
-      if (connected) {
-        debugPrint('WebSocket: Connected for conversation $_conversationId');
-      } else {
-        debugPrint('WebSocket: Failed to connect for conversation $_conversationId');
-      }
-    });
+    _wsService.connect(_conversationId);
   }
   
   /// Handle incoming WebSocket messages.
@@ -150,12 +138,8 @@ class ChatChangeNotifier extends ChangeNotifier {
     if (_disposed) return;
     if (_state is! ChatLoaded) return;
     
-    debugPrint('WebSocket: Handling message type=${message.type}');
-    
     if (message.isNewMessage) {
       _handleNewMessage(message.data);
-    } else if (message.isError) {
-      debugPrint('WebSocket: Error - ${message.data['error']}');
     }
   }
   
@@ -174,17 +158,10 @@ class ChatChangeNotifier extends ChangeNotifier {
       
       // Skip assistant messages while we're streaming - the streaming handler
       // already manages the assistant message, so WebSocket would create duplicates
-      if (currentState.isStreaming && role == 'assistant') {
-        debugPrint('WebSocket: Skipping assistant message during streaming');
-        return;
-      }
+      if (currentState.isStreaming && role == 'assistant') return;
       
-      // Check if we already have this message by ID (avoid duplicates)
       final existingIndex = currentState.messages.indexWhere((m) => m.id == messageId);
-      if (existingIndex >= 0) {
-        debugPrint('WebSocket: Message $messageId already exists, skipping');
-        return;
-      }
+      if (existingIndex >= 0) return;
       
       // Also check by content for recent messages (handles race conditions with optimistic updates)
       final recentMessages = currentState.messages.where((m) => 
@@ -195,10 +172,7 @@ class ChatChangeNotifier extends ChangeNotifier {
         DateTime.now().difference(m.createdAt).inSeconds < 30
       );
       
-      if (recentMessages.isNotEmpty) {
-        debugPrint('WebSocket: Skipping duplicate message (content match)');
-        return;
-      }
+      if (recentMessages.isNotEmpty) return;
       
       // Parse sources if present
       List<SourceCitation> sources = [];
@@ -231,15 +205,12 @@ class ChatChangeNotifier extends ChangeNotifier {
             : DateTime.now(),
       );
       
-      debugPrint('WebSocket: Adding new ${newMessage.role.name} message: ${newMessage.id}');
-      
-      // Add the message to the list
       _state = currentState.copyWith(
         messages: [...currentState.messages, newMessage],
       );
       notifyListeners();
-    } catch (e) {
-      debugPrint('WebSocket: Error parsing new message - $e');
+    } catch (_) {
+      // Silently handle malformed WebSocket messages
     }
   }
 
@@ -302,17 +273,9 @@ class ChatChangeNotifier extends ChangeNotifier {
     String? imageUrl,
     bool autoExtractUrls = true,
   }) async {
-    if (_state is! ChatLoaded) {
-      debugPrint('Cannot send message: state is not ChatLoaded');
-      return;
-    }
+    if (_state is! ChatLoaded) return;
     final currentState = _state as ChatLoaded;
-    if (currentState.isSending || currentState.isStreaming) {
-      debugPrint('Cannot send message: already sending or streaming');
-      return;
-    }
-
-    debugPrint('Starting streaming message: $content (hasImage: ${imageBase64 != null})');
+    if (currentState.isSending || currentState.isStreaming) return;
 
     // Cancel any existing stream
     await _streamSubscription?.cancel();
@@ -356,8 +319,6 @@ class ChatChangeNotifier extends ChangeNotifier {
         if (_state is! ChatLoaded) return;
         final loadedState = _state as ChatLoaded;
 
-        debugPrint('Received chunk: type=${chunk.type}');
-
         if (chunk.hasSources && chunk.sources != null) {
           sources = chunk.sources!
               .map((s) => ConversationMapper.sourceCitationFromModel(s))
@@ -366,9 +327,7 @@ class ChatChangeNotifier extends ChangeNotifier {
           notifyListeners();
         } else if (chunk.isContent && chunk.content != null) {
           accumulatedContent += chunk.content!;
-          debugPrint('Content accumulated: ${accumulatedContent.length} chars');
 
-          // Update the streaming message content
           final messages = loadedState.messages.map((m) {
             if (m.isStreaming) {
               return m.copyWithContent(accumulatedContent);
@@ -382,21 +341,16 @@ class ChatChangeNotifier extends ChangeNotifier {
           );
           notifyListeners();
         } else if (chunk.isDone) {
-          debugPrint('Stream done, messageId=${chunk.messageId}');
           finalMessageId = chunk.messageId;
           _finishStreaming(finalMessageId, accumulatedContent, sources);
         } else if (chunk.isError) {
-          debugPrint('Stream error: ${chunk.error}');
           _handleStreamError(chunk.error ?? 'Unknown error');
         }
       },
       onError: (error) {
-        debugPrint('Stream subscription error: $error');
         _handleStreamError(_getErrorMessage(error));
       },
       onDone: () {
-        debugPrint('Stream subscription done');
-        // If we haven't received a done event, finish anyway
         if (_state is ChatLoaded) {
           final loadedState = _state as ChatLoaded;
           if (loadedState.isStreaming) {

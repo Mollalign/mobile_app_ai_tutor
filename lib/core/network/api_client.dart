@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 import '../constants/constants.dart';
 import '../errors/errors.dart';
 import '../storage/storage.dart';
-import './interceptors/auth_interceptor.dart';
 import 'package:flutter/foundation.dart';
+
+import './interceptors/auth_interceptor.dart';
+import './interceptors/cache_interceptor.dart';
 
 /// Main HTTP client for API communication.
 /// 
@@ -20,6 +22,7 @@ class ApiClient {
 
   late final Dio _dio;
   late final AuthInterceptor _authInterceptor;
+  late final CacheInterceptor _cacheInterceptor;
   bool _isInitialized = false;
 
   /// Initialize the API client. Must be called once before use.
@@ -38,15 +41,22 @@ class ApiClient {
       ),
     );
 
-    // Add logging interceptor in debug mode
-    _dio.interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        error: true,
-        logPrint: (obj) => debugPrint('📡 $obj'),
-      ),
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          error: true,
+          logPrint: (obj) => debugPrint('📡 $obj'),
+        ),
+      );
+    }
+
+    // Add cache interceptor for GET requests
+    _cacheInterceptor = CacheInterceptor(
+      maxAge: const Duration(minutes: 2),
     );
+    _dio.interceptors.add(_cacheInterceptor);
 
     // Add auth interceptor
     _authInterceptor = AuthInterceptor(

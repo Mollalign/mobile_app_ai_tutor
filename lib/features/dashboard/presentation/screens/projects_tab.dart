@@ -178,13 +178,16 @@ class _ProjectsGridView extends ConsumerWidget {
           }
 
           final project = projects[index];
-          return ProjectGridCard(
+          final child = ProjectGridCard(
             project: project,
             onTap: () {
               context.push('/projects/${project.id}');
             },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
-          )
+          );
+
+          if (index >= 10) return child;
+          return child
               .animate()
               .fadeIn(delay: (50 * index).ms, duration: 300.ms)
               .scale(
@@ -239,13 +242,16 @@ class _ProjectsListView extends ConsumerWidget {
           }
 
           final project = projects[index];
-          return ProjectListTile(
+          final child = ProjectListTile(
             project: project,
             onTap: () {
               context.push('/projects/${project.id}');
             },
             onMoreTap: () => ProjectActionsSheet.show(context, project),
-          )
+          );
+
+          if (index >= 10) return child;
+          return child
               .animate()
               .fadeIn(delay: (50 * index).ms, duration: 300.ms)
               .slideX(

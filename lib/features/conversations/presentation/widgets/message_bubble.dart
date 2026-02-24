@@ -14,22 +14,25 @@ class MessageBubble extends StatelessWidget {
   final Message message;
   final VoidCallback? onCopy;
   final VoidCallback? onSourceTap;
+  final bool animate;
 
   const MessageBubble({
     super.key,
     required this.message,
     this.onCopy,
     this.onSourceTap,
+    this.animate = true,
   });
 
   @override
   Widget build(BuildContext context) {
     if (message.role.isUser) {
-      return _UserMessage(message: message);
+      return _UserMessage(message: message, animate: animate);
     } else if (message.role.isAssistant) {
       return _AssistantMessage(
         message: message,
         onSourceTap: onSourceTap,
+        animate: animate,
       );
     } else {
       return _SystemMessage(message: message);
@@ -40,8 +43,9 @@ class MessageBubble extends StatelessWidget {
 /// User message - Beautiful gradient bubble, right-aligned.
 class _UserMessage extends StatelessWidget {
   final Message message;
+  final bool animate;
 
-  const _UserMessage({required this.message});
+  const _UserMessage({required this.message, this.animate = true});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +53,7 @@ class _UserMessage extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
+    final result = Padding(
       padding: const EdgeInsets.only(
         left: 48,
         right: 16,
@@ -67,7 +71,6 @@ class _UserMessage extends StatelessWidget {
                 vertical: 14,
               ),
               decoration: BoxDecoration(
-                // Beautiful gradient for user messages
                 gradient: LinearGradient(
                   colors: isDark
                       ? [
@@ -92,7 +95,6 @@ class _UserMessage extends StatelessWidget {
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(6),
                 ),
-                // Subtle glow effect in dark mode
                 boxShadow: isDark
                     ? [
                         BoxShadow(
@@ -138,7 +140,10 @@ class _UserMessage extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0);
+    );
+
+    if (!animate) return result;
+    return result.animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0);
   }
 }
 
@@ -146,10 +151,12 @@ class _UserMessage extends StatelessWidget {
 class _AssistantMessage extends StatefulWidget {
   final Message message;
   final VoidCallback? onSourceTap;
+  final bool animate;
 
   const _AssistantMessage({
     required this.message,
     this.onSourceTap,
+    this.animate = true,
   });
 
   @override
@@ -164,7 +171,7 @@ class _AssistantMessageState extends State<_AssistantMessage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return GestureDetector(
+    final result = GestureDetector(
       onTap: () {
         if (_showActions) {
           setState(() => _showActions = false);
@@ -181,7 +188,6 @@ class _AssistantMessageState extends State<_AssistantMessage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // AI Avatar & Label
             Row(
               children: [
                 const AppLogo(size: 32),
@@ -194,7 +200,6 @@ class _AssistantMessageState extends State<_AssistantMessage> {
                   ),
                 ),
                 const Spacer(),
-                // Action button (always visible, subtle)
                 if (!widget.message.isStreaming)
                   _CopyButton(
                     message: widget.message,
@@ -204,7 +209,6 @@ class _AssistantMessageState extends State<_AssistantMessage> {
             ),
             const SizedBox(height: 12),
 
-            // Message content with beautiful markdown
             widget.message.isStreaming && widget.message.content.isEmpty
                 ? const _TypingIndicator()
                 : Container(
@@ -219,7 +223,6 @@ class _AssistantMessageState extends State<_AssistantMessage> {
                     ),
                   ),
 
-            // Sources section
             if (widget.message.hasSources) ...[
               const SizedBox(height: 16),
               _SourcesSection(
@@ -230,7 +233,10 @@ class _AssistantMessageState extends State<_AssistantMessage> {
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.05, end: 0);
+    );
+
+    if (!widget.animate) return result;
+    return result.animate().fadeIn(duration: 300.ms).slideX(begin: -0.05, end: 0);
   }
 
   MarkdownStyleSheet _buildMarkdownStyleSheet(BuildContext context) {

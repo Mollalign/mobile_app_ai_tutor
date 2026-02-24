@@ -353,7 +353,7 @@ class _LoadedState extends ConsumerWidget {
             }
 
             final conversation = filteredConversations[index];
-            return Padding(
+            final child = Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: ConversationCard(
                 conversation: conversation,
@@ -362,7 +362,10 @@ class _LoadedState extends ConsumerWidget {
                 },
                 onDelete: () => _confirmDelete(context, ref, conversation),
               ),
-            )
+            );
+
+            if (index >= 10) return child;
+            return child
                 .animate()
                 .fadeIn(
                   delay: (50 * index).ms,
