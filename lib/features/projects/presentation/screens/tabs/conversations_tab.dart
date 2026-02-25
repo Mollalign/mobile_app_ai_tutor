@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../../app/router.dart';
 import '../../../../../core/constants/app_spacing.dart';
+import '../../../../../shared/widgets/shimmer_loading.dart';
 import '../../../../conversations/domain/entities/entities.dart';
 import '../../../../conversations/presentation/providers/providers.dart';
 import '../../../../conversations/presentation/widgets/widgets.dart';
@@ -148,7 +149,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return const ShimmerConversationList(itemCount: 5);
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../data/models/sharing_models.dart';
 import '../providers/sharing_providers.dart';
 
@@ -26,7 +27,7 @@ class MySharesScreen extends ConsumerWidget {
         data: (shares) => shares.isEmpty
             ? _EmptySharesView()
             : _SharesList(shares: shares),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const ShimmerConversationList(itemCount: 4),
         error: (error, stack) => _ErrorView(
           error: error.toString(),
           onRetry: () => ref.read(mySharesProvider.notifier).loadShares(),

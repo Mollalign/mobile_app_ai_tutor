@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_utils.dart';
 import '../../data/datasources/knowledge_remote_datasource.dart';
 
 // ============================================================
@@ -107,7 +108,7 @@ class KnowledgeTabNotifier extends ChangeNotifier {
         knowledgeData: knowledgeData,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
     }
     notifyListeners();
   }
@@ -125,7 +126,7 @@ class KnowledgeTabNotifier extends ChangeNotifier {
           (data['topics'] as List? ?? []).cast<Map<String, dynamic>>();
       state = state.copyWith(isExtracting: false, topics: topics);
     } catch (e) {
-      state = state.copyWith(isExtracting: false, error: e.toString());
+      state = state.copyWith(isExtracting: false, error: friendlyErrorMessage(e));
     }
     notifyListeners();
   }
@@ -165,7 +166,7 @@ class ProgressStatsNotifier extends ChangeNotifier {
       stats = await _dataSource.getProgressStats();
       isLoading = false;
     } catch (e) {
-      error = e.toString();
+      error = friendlyErrorMessage(e);
       isLoading = false;
     }
     notifyListeners();

@@ -90,17 +90,30 @@ class AppRoutes {
   static String sharedConversation(String token) => '/shared/$token';
 }
 
-/// Router provider.
+/// Listenable adapter that bridges Riverpod state changes to GoRouter's
+/// refreshListenable so the router can re-evaluate redirects without
+/// being fully recreated.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(Ref ref) {
+    ref.listen(authNotifierProvider, (_, _) {
+      notifyListeners();
+    });
+  }
+}
+
+/// Router provider -- creates the GoRouter once and uses refreshListenable
+/// to re-evaluate redirects when auth state changes.
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authNotifierProvider);
+  final authChangeNotifier = _AuthChangeNotifier(ref);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: authChangeNotifier,
 
-    // Redirect based on auth state
     redirect: (context, state) {
-      // Password reset routes don't need auth
+      final authState = ref.read(authNotifierProvider);
+
       final isPasswordResetRoute = 
           state.matchedLocation == AppRoutes.forgotPassword ||
           state.matchedLocation == AppRoutes.verifyResetCode ||
@@ -111,7 +124,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           isPasswordResetRoute;
       final isOnSplash = state.matchedLocation == AppRoutes.splash;
 
-      // Handle different auth states
       return authState.when(
         initial: () => null,
         loading: () => null,
@@ -140,9 +152,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
-      // ============================================
-      // Auth Routes (fade transitions)
-      // ============================================
+      // Auth Routes
       GoRoute(
         path: AppRoutes.splash,
         pageBuilder: (context, state) => _fadeThroughPage(
@@ -186,9 +196,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       
-      // ============================================
-      // Main App Routes (fade transition)
-      // ============================================
+      // Main App Routes
       GoRoute(
         path: AppRoutes.home,
         pageBuilder: (context, state) => _fadeThroughPage(
@@ -197,9 +205,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       
-      // ============================================
-      // Project Routes (slide-up detail)
-      // ============================================
+      // Project Routes
       GoRoute(
         path: AppRoutes.projectDetail,
         pageBuilder: (context, state) {
@@ -211,9 +217,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       
-      // ============================================
-      // Conversation Routes (slide-up detail)
-      // ============================================
+      // Conversation Routes
       GoRoute(
         path: AppRoutes.chat,
         pageBuilder: (context, state) {
@@ -225,9 +229,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       
-      // ============================================
-      // Sharing Routes (slide-up)
-      // ============================================
+      // Sharing Routes
       GoRoute(
         path: AppRoutes.myShares,
         pageBuilder: (context, state) => _slideUpPage(

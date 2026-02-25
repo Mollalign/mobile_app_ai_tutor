@@ -288,3 +288,135 @@ class ShimmerHomeTile extends StatelessWidget {
     );
   }
 }
+
+/// Shimmer skeleton for a quiz card in the list.
+class ShimmerQuizCard extends StatelessWidget {
+  const ShimmerQuizCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmer(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Row(
+            children: [
+              const ShimmerBox(
+                  width: 48, height: 48, borderRadius: AppRadius.md),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerBox(
+                        width: MediaQuery.of(context).size.width * 0.4,
+                        height: 16),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Row(
+                      children: [
+                        ShimmerBox(width: 50, height: 14, borderRadius: 4),
+                        SizedBox(width: AppSpacing.sm),
+                        ShimmerBox(width: 80, height: 12),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const ShimmerBox(width: 32, height: 32, borderRadius: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shimmer skeleton for the quiz list.
+class ShimmerQuizList extends StatelessWidget {
+  final int itemCount;
+  const ShimmerQuizList({super.key, this.itemCount = 4});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      itemCount: itemCount,
+      itemBuilder: (context, index) => const ShimmerQuizCard(),
+    );
+  }
+}
+
+/// Shimmer skeleton for knowledge tab (mastery header + topic cards).
+class ShimmerKnowledgeTab extends StatelessWidget {
+  const ShimmerKnowledgeTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmer(
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        children: [
+          // Mastery header
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // Topic cards
+          ...List.generate(
+            4,
+            (i) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: Row(
+                  children: [
+                    const ShimmerBox(width: 48, height: 48, borderRadius: 24),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShimmerBox(
+                              width: MediaQuery.of(context).size.width * 0.35,
+                              height: 16),
+                          const SizedBox(height: AppSpacing.sm),
+                          const Row(
+                            children: [
+                              ShimmerBox(
+                                  width: 60, height: 14, borderRadius: 4),
+                              SizedBox(width: AppSpacing.sm),
+                              ShimmerBox(width: 70, height: 12),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const ShimmerBox(width: 20, height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_utils.dart';
 import '../../data/repositories/repositories.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/repositories.dart';
@@ -319,7 +320,7 @@ class UploadChangeNotifier extends ChangeNotifier {
       _cancelTokens.remove(filename);
       _updateUploadState(filename, (s) => s.copyWith(
         isUploading: false,
-        error: e.toString(),
+        error: friendlyErrorMessage(e),
       ));
     }
   }
@@ -362,7 +363,7 @@ class UploadChangeNotifier extends ChangeNotifier {
       _cancelTokens.remove(filename);
       _updateUploadState(filename, (s) => s.copyWith(
         isUploading: false,
-        error: e.toString(),
+        error: friendlyErrorMessage(e),
       ));
     }
   }

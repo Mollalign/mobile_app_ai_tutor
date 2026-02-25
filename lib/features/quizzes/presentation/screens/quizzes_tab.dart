@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/shimmer_loading.dart';
 import '../providers/quiz_provider.dart';
 import '../widgets/generate_quiz_sheet.dart';
 import 'take_quiz_screen.dart';
@@ -25,7 +26,7 @@ class QuizzesTab extends ConsumerWidget {
 
         return Scaffold(
           body: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const ShimmerQuizList()
               : state.error != null
                   ? _ErrorBody(
                       message: state.error!,
@@ -283,8 +284,7 @@ class _EmptyBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               'No quizzes yet',
-              style:
-                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ).animate().fadeIn(delay: 100.ms),
             const SizedBox(height: AppSpacing.sm),
             Text(

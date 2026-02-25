@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../shared/widgets/offline_banner.dart';
 import '../providers/providers.dart';
 import 'home_tab.dart';
 import 'projects_tab.dart';
@@ -36,9 +37,11 @@ class MainShell extends ConsumerWidget {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: tabs,
+      body: OfflineAwareBody(
+        child: IndexedStack(
+          index: currentIndex,
+          children: tabs,
+        ),
       ),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),

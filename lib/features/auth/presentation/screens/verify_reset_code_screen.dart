@@ -114,7 +114,7 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: AppSpacing.paddingAllLg,
             child: Form(
               key: _formKey,

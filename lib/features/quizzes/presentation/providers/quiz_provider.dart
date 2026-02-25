@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_utils.dart';
 import '../../data/datasources/quiz_remote_datasource.dart';
 
 // ============================================================
@@ -62,14 +63,14 @@ class QuizListNotifier extends ChangeNotifier {
 
     try {
       final data = await _dataSource.listQuizzes(projectId);
-      final quizzes =
-          (data['quizzes'] as List? ?? []).cast<Map<String, dynamic>>();
+      final quizzes = (data['quizzes'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
       state = QuizListState(
         quizzes: quizzes,
         total: data['total'] as int? ?? quizzes.length,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
     }
     notifyListeners();
   }
@@ -105,7 +106,7 @@ final quizListNotifierProvider =
 });
 
 // ============================================================
-// Generate Quiz Notifier
+// Generate Quiz State
 // ============================================================
 
 class GenerateQuizNotifier extends ChangeNotifier {
@@ -141,7 +142,7 @@ class GenerateQuizNotifier extends ChangeNotifier {
       notifyListeners();
       return quiz;
     } catch (e) {
-      error = e.toString();
+      error = friendlyErrorMessage(e);
       isGenerating = false;
       notifyListeners();
       return null;
@@ -157,7 +158,7 @@ final generateQuizNotifierProvider =
 });
 
 // ============================================================
-// Take Quiz Notifier
+// Take Quiz State
 // ============================================================
 
 class TakeQuizNotifier extends ChangeNotifier {
@@ -183,7 +184,7 @@ class TakeQuizNotifier extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     } catch (e) {
-      error = e.toString();
+      error = friendlyErrorMessage(e);
       isLoading = false;
       notifyListeners();
     }
@@ -227,7 +228,7 @@ class TakeQuizNotifier extends ChangeNotifier {
       notifyListeners();
       return result;
     } catch (e) {
-      error = e.toString();
+      error = friendlyErrorMessage(e);
       isSubmitting = false;
       notifyListeners();
       return null;

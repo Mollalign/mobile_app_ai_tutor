@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../../conversations/presentation/providers/providers.dart';
 
 /// Recent conversations section on home tab.
@@ -100,12 +101,7 @@ class _RecentConversationsSectionState extends ConsumerState<RecentConversations
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        const Center(
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        ...List.generate(3, (_) => const ShimmerHomeTile()),
       ],
     );
   }

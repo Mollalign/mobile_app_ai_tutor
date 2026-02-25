@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/utils/error_utils.dart';
+import '../../../../shared/widgets/shimmer_loading.dart';
 import '../providers/knowledge_provider.dart';
 import '../widgets/mastery_ring.dart';
 import '../widgets/topic_card.dart';
@@ -24,12 +26,12 @@ class KnowledgeTab extends ConsumerWidget {
         final state = notifier.state;
 
         if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const ShimmerKnowledgeTab();
         }
 
         if (state.error != null && state.topics.isEmpty) {
           return _ErrorBody(
-            message: state.error!,
+            message: friendlyErrorMessage(state.error!),
             onRetry: () => notifier.loadAll(refresh: true),
           );
         }

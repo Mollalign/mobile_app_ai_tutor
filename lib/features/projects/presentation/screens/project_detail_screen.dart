@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../domain/entities/entities.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
@@ -80,11 +81,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
   Widget _buildLoadingScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Loading...'),
+        title: AppShimmer(
+          child: ShimmerBox(
+            width: MediaQuery.of(context).size.width * 0.35,
+            height: 20,
+          ),
+        ),
       ),
-      body: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      body: const ShimmerConversationList(itemCount: 5),
     );
   }
 

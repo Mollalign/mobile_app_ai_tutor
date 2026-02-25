@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../data/models/sharing_models.dart';
 import '../providers/sharing_providers.dart';
 
@@ -33,9 +34,7 @@ class SharedConversationScreen extends ConsumerWidget {
           conversation: conversation,
           shareToken: shareToken,
         ),
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const ShimmerChatMessages(),
         error: (error, stack) => _ErrorView(
           error: error.toString(),
           onRetry: () => ref.invalidate(shareViewProvider(shareToken)),
