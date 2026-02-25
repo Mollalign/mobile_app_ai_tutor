@@ -39,7 +39,6 @@ class _TakeQuizScreenState extends ConsumerState<TakeQuizScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    ref.read(takeQuizNotifierProvider).reset();
     super.dispose();
   }
 
@@ -49,159 +48,166 @@ class _TakeQuizScreenState extends ConsumerState<TakeQuizScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    if (notifier.isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: Text(widget.quizTitle)),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    return AnimatedBuilder(
+      animation: notifier,
+      builder: (context, _) {
+        if (notifier.isLoading) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.quizTitle)),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    if (notifier.error != null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(widget.quizTitle)),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.alertCircle, size: 48, color: colorScheme.error),
-              const SizedBox(height: AppSpacing.md),
-              Text(notifier.error!, textAlign: TextAlign.center),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton(
-                onPressed: () => notifier.loadQuiz(widget.quizId),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final questions =
-        (notifier.quiz?['questions'] as List?)?.cast<Map<String, dynamic>>() ??
-            [];
-    if (questions.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text(widget.quizTitle)),
-        body: const Center(child: Text('No questions found')),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.quizTitle),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(6),
-          child: LinearProgressIndicator(
-            value: (notifier.answeredCount) / questions.length,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            color: colorScheme.primary,
-            minHeight: 4,
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Question counter
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Question ${_currentPage + 1} of ${questions.length}',
-                  style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                Text(
-                  '${notifier.answeredCount}/${questions.length} answered',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Questions page view
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: questions.length,
-              onPageChanged: (page) => setState(() => _currentPage = page),
-              itemBuilder: (context, index) {
-                return _QuestionPage(
-                  question: questions[index],
-                  selectedAnswer: notifier.answers[questions[index]['id']],
-                  onAnswer: (answer) {
-                    HapticFeedback.lightImpact();
-                    notifier.setAnswer(questions[index]['id'], answer);
-                  },
-                );
-              },
-            ),
-          ),
-          // Navigation
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
+        if (notifier.error != null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.quizTitle)),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_currentPage > 0)
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _pageController.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        ),
-                        icon: const Icon(LucideIcons.arrowLeft),
-                        label: const Text('Previous'),
-                      ),
-                    ),
-                  if (_currentPage > 0 &&
-                      _currentPage < questions.length - 1)
-                    const SizedBox(width: AppSpacing.sm),
-                  if (_currentPage < questions.length - 1)
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => _pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        ),
-                        icon: const Icon(LucideIcons.arrowRight),
-                        label: const Text('Next'),
-                      ),
-                    ),
-                  if (_currentPage == questions.length - 1)
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: notifier.isSubmitting
-                            ? null
-                            : () => _submitQuiz(notifier),
-                        icon: notifier.isSubmitting
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2),
-                              )
-                            : const Icon(LucideIcons.checkCircle),
-                        label: Text(
-                          notifier.isSubmitting ? 'Submitting...' : 'Submit',
-                        ),
-                      ),
-                    ),
+                  Icon(LucideIcons.alertCircle,
+                      size: 48, color: colorScheme.error),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(notifier.error!, textAlign: TextAlign.center),
+                  const SizedBox(height: AppSpacing.md),
+                  FilledButton(
+                    onPressed: () => notifier.loadQuiz(widget.quizId),
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
             ),
+          );
+        }
+
+        final questions = (notifier.quiz?['questions'] as List?)
+                ?.cast<Map<String, dynamic>>() ??
+            [];
+        if (questions.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.quizTitle)),
+            body: const Center(child: Text('No questions found')),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(widget.quizTitle),
+            centerTitle: true,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(6),
+              child: LinearProgressIndicator(
+                value: (notifier.answeredCount) / questions.length,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                color: colorScheme.primary,
+                minHeight: 4,
+              ),
+            ),
           ),
-        ],
-      ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Question ${_currentPage + 1} of ${questions.length}',
+                      style: textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      '${notifier.answeredCount}/${questions.length} answered',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: questions.length,
+                  onPageChanged: (page) =>
+                      setState(() => _currentPage = page),
+                  itemBuilder: (context, index) {
+                    return _QuestionPage(
+                      question: questions[index],
+                      selectedAnswer:
+                          notifier.answers[questions[index]['id']],
+                      onAnswer: (answer) {
+                        HapticFeedback.lightImpact();
+                        notifier.setAnswer(questions[index]['id'], answer);
+                      },
+                    );
+                  },
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      if (_currentPage > 0)
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            ),
+                            icon: const Icon(LucideIcons.arrowLeft),
+                            label: const Text('Previous'),
+                          ),
+                        ),
+                      if (_currentPage > 0 &&
+                          _currentPage < questions.length - 1)
+                        const SizedBox(width: AppSpacing.sm),
+                      if (_currentPage < questions.length - 1)
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: () => _pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            ),
+                            icon: const Icon(LucideIcons.arrowRight),
+                            label: const Text('Next'),
+                          ),
+                        ),
+                      if (_currentPage == questions.length - 1)
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: notifier.isSubmitting
+                                ? null
+                                : () => _submitQuiz(notifier),
+                            icon: notifier.isSubmitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(LucideIcons.checkCircle),
+                            label: Text(
+                              notifier.isSubmitting
+                                  ? 'Submitting...'
+                                  : 'Submit',
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -273,7 +279,6 @@ class _QuestionPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Points badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -289,8 +294,6 @@ class _QuestionPage extends StatelessWidget {
             ),
           ).animate().fadeIn(),
           const SizedBox(height: AppSpacing.md),
-
-          // Question text
           Text(
             questionText,
             style: textTheme.titleMedium?.copyWith(
@@ -298,17 +301,13 @@ class _QuestionPage extends StatelessWidget {
               height: 1.4,
             ),
           ).animate().fadeIn(delay: 50.ms),
-
-          // Code snippet
           if (codeSnippet != null && codeSnippet.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.grey.shade900
-                    : Colors.grey.shade100,
+                color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: colorScheme.outlineVariant,
@@ -324,8 +323,6 @@ class _QuestionPage extends StatelessWidget {
             ).animate().fadeIn(delay: 100.ms),
           ],
           const SizedBox(height: AppSpacing.lg),
-
-          // Options
           ...options.asMap().entries.map((entry) {
             final index = entry.key;
             final option = entry.value;

@@ -12,6 +12,8 @@ import '../../../conversations/presentation/providers/providers.dart';
 import '../../../conversations/presentation/widgets/widgets.dart';
 import '../providers/providers.dart';
 import '../../../projects/presentation/providers/providers.dart';
+import '../../../knowledge/presentation/providers/knowledge_provider.dart';
+import '../../../knowledge/presentation/widgets/mastery_ring.dart';
 import '../../../projects/presentation/widgets/create_project_sheet.dart';
 
 /// Home tab - Modern dashboard with real data.
@@ -79,6 +81,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   const _QuickActionsSection(),
                   const SizedBox(height: 28),
                   const _StatsSectionConnected(),
+                  const SizedBox(height: 28),
+                  const _LearningProgressSection(),
                   const SizedBox(height: 28),
                   _RecentSection(
                     title: 'Recent Conversations',
@@ -811,6 +815,170 @@ class _ThemeToggleButton extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================
+// Learning Progress Section
+// ============================================================
+
+class _LearningProgressSection extends ConsumerWidget {
+  const _LearningProgressSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.watch(progressStatsNotifierProvider);
+
+    return AnimatedBuilder(
+      animation: notifier,
+      builder: (context, _) {
+        if (notifier.isLoading || notifier.stats == null) {
+          return const SizedBox.shrink();
+        }
+
+        if (notifier.error != null) {
+          return const SizedBox.shrink();
+        }
+
+        final stats = notifier.stats!;
+        final quizAttempts = stats['total_quiz_attempts'] as int? ?? 0;
+        final avgScore = (stats['avg_quiz_score'] as num?)?.toDouble() ?? 0;
+        final knowledge =
+            stats['knowledge'] as Map<String, dynamic>? ?? {};
+        final overallMastery =
+            (knowledge['overall_mastery'] as num?)?.toDouble() ?? 0;
+        final topicsStudied =
+            knowledge['total_topics_studied'] as int? ?? 0;
+
+        if (quizAttempts == 0 && topicsStudied == 0) {
+          return const SizedBox.shrink();
+        }
+
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Learning Progress',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primaryContainer
+                        .withAlpha(isDark ? 80 : 150),
+                    colorScheme.tertiaryContainer
+                        .withAlpha(isDark ? 60 : 120),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: colorScheme.outlineVariant
+                      .withAlpha(isDark ? 38 : 77),
+                ),
+              ),
+              child: Row(
+                children: [
+                  MasteryRing(
+                    mastery: overallMastery,
+                    size: 72,
+                    strokeWidth: 7,
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Overall Mastery',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _MiniStat(
+                              icon: LucideIcons.brainCircuit,
+                              value: '$quizAttempts',
+                              label: 'Quizzes',
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 16),
+                            _MiniStat(
+                              icon: LucideIcons.target,
+                              value: '${avgScore.round()}%',
+                              label: 'Avg Score',
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(width: 16),
+                            _MiniStat(
+                              icon: LucideIcons.bookOpen,
+                              value: '$topicsStudied',
+                              label: 'Topics',
+                              color: Colors.green,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
+      },
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _MiniStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -11,6 +11,7 @@ import 'tabs/overview_tab.dart';
 import 'tabs/documents_tab.dart';
 import 'tabs/conversations_tab.dart';
 import '../../../quizzes/presentation/screens/quizzes_tab.dart';
+import '../../../knowledge/presentation/screens/knowledge_tab.dart';
 
 /// Project detail screen with tabs.
 /// 
@@ -37,7 +38,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -263,6 +264,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                   ),
                   child: TabBar(
                     controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     labelColor: colorScheme.primary,
                     unselectedLabelColor: colorScheme.onSurfaceVariant,
                     indicatorColor: colorScheme.primary,
@@ -277,7 +280,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                       ),
                       Tab(
                         icon: Icon(LucideIcons.fileText, size: 18),
-                        text: 'Documents',
+                        text: 'Docs',
                       ),
                       Tab(
                         icon: Icon(LucideIcons.messageSquare, size: 18),
@@ -286,6 +289,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                       Tab(
                         icon: Icon(LucideIcons.brainCircuit, size: 18),
                         text: 'Quizzes',
+                      ),
+                      Tab(
+                        icon: Icon(LucideIcons.bookOpen, size: 18),
+                        text: 'Knowledge',
                       ),
                     ],
                   ),
@@ -301,6 +308,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
             DocumentsTab(projectId: widget.projectId),
             ConversationsTab(projectId: widget.projectId),
             QuizzesTab(projectId: widget.projectId),
+            KnowledgeTab(projectId: widget.projectId),
           ],
         ),
       ),

@@ -62,8 +62,8 @@ class QuizListNotifier extends ChangeNotifier {
 
     try {
       final data = await _dataSource.listQuizzes(projectId);
-      final quizzes = (data['quizzes'] as List? ?? [])
-          .cast<Map<String, dynamic>>();
+      final quizzes =
+          (data['quizzes'] as List? ?? []).cast<Map<String, dynamic>>();
       state = QuizListState(
         quizzes: quizzes,
         total: data['total'] as int? ?? quizzes.length,
@@ -105,7 +105,7 @@ final quizListNotifierProvider =
 });
 
 // ============================================================
-// Generate Quiz State
+// Generate Quiz Notifier
 // ============================================================
 
 class GenerateQuizNotifier extends ChangeNotifier {
@@ -157,7 +157,7 @@ final generateQuizNotifierProvider =
 });
 
 // ============================================================
-// Take Quiz State
+// Take Quiz Notifier
 // ============================================================
 
 class TakeQuizNotifier extends ChangeNotifier {

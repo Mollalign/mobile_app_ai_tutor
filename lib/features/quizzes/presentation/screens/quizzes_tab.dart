@@ -17,50 +17,57 @@ class QuizzesTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.watch(quizListNotifierProvider(projectId));
-    final state = notifier.state;
 
-    return Scaffold(
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.error != null
-              ? _ErrorBody(
-                  message: state.error!,
-                  onRetry: () => notifier.loadQuizzes(refresh: true),
-                )
-              : state.quizzes.isEmpty
-                  ? _EmptyBody(
-                      onGenerate: () => _generateQuiz(context, ref),
+    return AnimatedBuilder(
+      animation: notifier,
+      builder: (context, _) {
+        final state = notifier.state;
+
+        return Scaffold(
+          body: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : state.error != null
+                  ? _ErrorBody(
+                      message: state.error!,
+                      onRetry: () => notifier.loadQuizzes(refresh: true),
                     )
-                  : RefreshIndicator(
-                      onRefresh: () => notifier.loadQuizzes(refresh: true),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(
-                          top: AppSpacing.md,
-                          bottom: 80,
+                  : state.quizzes.isEmpty
+                      ? _EmptyBody(
+                          onGenerate: () => _generateQuiz(context, ref),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () => notifier.loadQuizzes(refresh: true),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.only(
+                              top: AppSpacing.md,
+                              bottom: 80,
+                            ),
+                            itemCount: state.quizzes.length,
+                            itemBuilder: (context, index) {
+                              final quiz = state.quizzes[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.md,
+                                  vertical: AppSpacing.xs,
+                                ),
+                                child: _QuizCard(
+                                  quiz: quiz,
+                                  onTap: () => _takeQuiz(context, quiz),
+                                  onDelete: () =>
+                                      _confirmDelete(context, ref, quiz),
+                                ),
+                              ).animate().fadeIn(delay: (index * 50).ms);
+                            },
+                          ),
                         ),
-                        itemCount: state.quizzes.length,
-                        itemBuilder: (context, index) {
-                          final quiz = state.quizzes[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: AppSpacing.xs,
-                            ),
-                            child: _QuizCard(
-                              quiz: quiz,
-                              onTap: () => _takeQuiz(context, quiz),
-                              onDelete: () => _confirmDelete(context, ref, quiz),
-                            ),
-                          ).animate().fadeIn(delay: (index * 50).ms);
-                        },
-                      ),
-                    ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'quiz_fab_$projectId',
-        onPressed: () => _generateQuiz(context, ref),
-        icon: const Icon(LucideIcons.sparkles),
-        label: const Text('Generate Quiz'),
-      ),
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'quiz_fab_$projectId',
+            onPressed: () => _generateQuiz(context, ref),
+            icon: const Icon(LucideIcons.sparkles),
+            label: const Text('Generate Quiz'),
+          ),
+        );
+      },
     );
   }
 
@@ -276,7 +283,8 @@ class _EmptyBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               'No quizzes yet',
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style:
+                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ).animate().fadeIn(delay: 100.ms),
             const SizedBox(height: AppSpacing.sm),
             Text(
