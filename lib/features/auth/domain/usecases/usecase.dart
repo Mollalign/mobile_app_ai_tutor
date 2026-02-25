@@ -9,3 +9,6 @@ export 'check_auth_status_usecase.dart';
 export 'request_password_reset_usecase.dart';
 export 'verify_reset_code_usecase.dart';
 export 'reset_password_usecase.dart';
+
+// Google Sign-In
+export 'google_sign_in_usecase.dart';

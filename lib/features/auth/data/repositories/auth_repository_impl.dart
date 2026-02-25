@@ -1,3 +1,4 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/features/auth/data/models/token_model.dart';
 import 'package:mobile/features/auth/data/models/user_model.dart';
 
@@ -216,6 +217,33 @@ class AuthRepositoryImpl implements AuthRepository {
       await _storage.clearAll();
       return false;
     }
+  }
+
+  // ============================================================
+  // Google Sign-In
+  // ============================================================
+
+  @override
+  Future<({User user, AuthTokens tokens})> googleSignIn() async {
+    final gsi = GoogleSignIn.instance;
+    await gsi.initialize();
+
+    final account = await gsi.authenticate();
+
+    final idToken = account.authentication.idToken;
+    if (idToken == null) {
+      throw Exception('Failed to obtain Google ID token');
+    }
+
+    final tokenModel = await _remoteDataSource.googleAuth(idToken: idToken);
+
+    await _saveTokens(tokenModel);
+    await _storage.saveUserData(tokenModel.user.toJson());
+
+    return (
+      user: tokenModel.user.toEntity(),
+      tokens: tokenModel.toEntity(),
+    );
   }
 
   // ============================================================

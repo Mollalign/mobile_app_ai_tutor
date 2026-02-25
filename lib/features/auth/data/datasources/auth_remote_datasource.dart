@@ -46,6 +46,9 @@ abstract class AuthRemoteDataSource {
     required String code,
     required String newPassword,
   });
+
+  /// POST /auth/google
+  Future<TokenModel> googleAuth({required String idToken});
 }
 
 /// Implementation of [AuthRemoteDataSource].
@@ -150,5 +153,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     );
 
     return MessageResponseModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  @override
+  Future<TokenModel> googleAuth({required String idToken}) async {
+    final response = await _apiClient.post(
+      '/auth/google',
+      data: {'id_token': idToken},
+    );
+
+    return TokenModel.fromJson(response.data as Map<String, dynamic>);
   }
 }

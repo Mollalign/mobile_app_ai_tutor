@@ -7,13 +7,6 @@ class ApiConstants {
   // ============================================================
   // Base Configuration
   // ============================================================
-
-  // Using ADB reverse port forwarding (USB connection)
-  // This forwards phone's localhost:8000 → computer's localhost:8000
-  //
-  // To set up (run once when phone connects):
-  //   adb reverse tcp:8000 tcp:8000
-  //
   // This works regardless of WiFi network!
   static const String baseUrl = 'http://localhost:8000';
   // static const String baseUrl = 'https://ai-tutor-api-vruq.onrender.com';

@@ -52,7 +52,10 @@ final checkAuthStatusUseCaseProvider = Provider<CheckAuthStatusUseCase>((ref) {
   return CheckAuthStatusUseCase(ref.watch(authRepositoryProvider));
 });
 
-
+/// Provider for Google Sign-In use case.
+final googleSignInUseCaseProvider = Provider<GoogleSignInUseCase>((ref) {
+  return GoogleSignInUseCase(ref.watch(authRepositoryProvider));
+});
 
 // ============================================================
 // Password Reset Use Case Providers

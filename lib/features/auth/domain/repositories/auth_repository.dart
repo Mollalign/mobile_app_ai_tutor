@@ -72,4 +72,10 @@ abstract class AuthRepository {
   /// 
   /// Returns true if valid tokens exist.
   Future<bool> isAuthenticated();
+
+  /// Authenticate or register via Google Sign-In.
+  ///
+  /// Handles the Google SDK flow and backend token exchange.
+  /// Returns [User] and [AuthTokens] on success.
+  Future<({User user, AuthTokens tokens})> googleSignIn();
 }

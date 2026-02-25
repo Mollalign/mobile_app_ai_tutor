@@ -17,15 +17,16 @@ class AuthNotifier extends Notifier<AuthState> {
   late final LogoutUseCase _logoutUseCase;
   late final GetCurrentUserUseCase _getCurrentUserUseCase;
   late final CheckAuthStatusUseCase _checkAuthStatusUseCase;
+  late final GoogleSignInUseCase _googleSignInUseCase;
 
   @override
   AuthState build() {
-    // Initialize use cases from providers
     _loginUseCase = ref.watch(loginUseCaseProvider);
     _registerUseCase = ref.watch(registerUseCaseProvider);
     _logoutUseCase = ref.watch(logoutUseCaseProvider);
     _getCurrentUserUseCase = ref.watch(getCurrentUserUseCaseProvider);
     _checkAuthStatusUseCase = ref.watch(checkAuthStatusUseCaseProvider);
+    _googleSignInUseCase = ref.watch(googleSignInUseCaseProvider);
 
     // Start by checking auth status
     _checkAuthStatus();
@@ -93,6 +94,23 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (e) {
       // Even if logout fails, treat as logged out
       state = const AuthState.unauthenticated();
+    }
+  }
+
+  /// Authenticate via Google Sign-In.
+  Future<void> googleSignIn() async {
+    state = const AuthState.loading();
+
+    try {
+      final result = await _googleSignInUseCase();
+      state = AuthState.authenticated(user: result.user);
+    } catch (e) {
+      final msg = _getErrorMessage(e);
+      if (msg.contains('cancelled')) {
+        state = const AuthState.unauthenticated();
+      } else {
+        state = AuthState.error(message: msg);
+      }
     }
   }
 
