@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +20,6 @@ import '../../../knowledge/presentation/providers/knowledge_provider.dart';
 import '../../../knowledge/presentation/widgets/mastery_ring.dart';
 import '../../../projects/presentation/widgets/create_project_sheet.dart';
 
-/// Home tab - Modern dashboard with real data.
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
@@ -37,7 +38,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -45,63 +45,40 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         onRefresh: _onRefresh,
         color: colorScheme.primary,
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           slivers: [
-            SliverAppBar(
-              expandedHeight: 70,
-              floating: true,
-              pinned: true,
-              backgroundColor: colorScheme.surface,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              flexibleSpace: FlexibleSpaceBar(
-                expandedTitleScale: 1.0,
-                titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                title: Row(
-                  children: [
-                    const AppLogo(size: 40),
-                    const SizedBox(width: 12),
-                    Text(
-                      'AI Tutor',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                const _NotificationBellButton(),
-                _ThemeToggleButton(),
-                const SizedBox(width: 8),
-              ],
-            ),
+            _buildAppBar(context),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const _WelcomeCardConnected(),
+                  const _HeroGreetingCard(),
+                  const SizedBox(height: 20),
+                  const _QuickActionsRow(),
                   const SizedBox(height: 24),
-                  const _QuickActionsSection(),
-                  const SizedBox(height: 28),
-                  const _StatsSectionConnected(),
-                  const SizedBox(height: 28),
-                  const _LearningProgressSection(),
-                  const SizedBox(height: 28),
-                  _RecentSection(
+                  const _StatsStrip(),
+                  const SizedBox(height: 24),
+                  const _LearningProgressCard(),
+                  const SizedBox(height: 24),
+                  _SectionHeader(
                     title: 'Recent Conversations',
                     onViewAll: () {
                       ref.read(tabControllerProvider.notifier).goToChats();
                     },
-                    child: const _RecentConversationsList(),
                   ),
-                  const SizedBox(height: 28),
-                  _RecentSection(
+                  const SizedBox(height: 12),
+                  const _RecentConversationsList(),
+                  const SizedBox(height: 24),
+                  _SectionHeader(
                     title: 'Your Projects',
                     onViewAll: () {
                       ref.read(tabControllerProvider.notifier).goToProjects();
                     },
-                    child: const _ProjectsList(),
                   ),
+                  const SizedBox(height: 12),
+                  const _ProjectsList(),
                 ]),
               ),
             ),
@@ -110,11 +87,52 @@ class _HomeTabState extends ConsumerState<HomeTab> {
       ),
     );
   }
+
+  Widget _buildAppBar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return SliverAppBar(
+      expandedHeight: 70,
+      floating: true,
+      pinned: true,
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        expandedTitleScale: 1.0,
+        titlePadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        title: Row(
+          children: [
+            const AppLogo(size: 36),
+            const SizedBox(width: 10),
+            Text(
+              'AI Tutor',
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        const _NotificationBellButton(),
+        const SizedBox(width: 4),
+        _ThemeToggleButton(),
+        const SizedBox(width: 12),
+      ],
+    );
+  }
 }
 
-/// Watches only the user's first name from auth state.
-class _WelcomeCardConnected extends ConsumerWidget {
-  const _WelcomeCardConnected();
+// ============================================================
+// Hero Greeting Card
+// ============================================================
+
+class _HeroGreetingCard extends ConsumerWidget {
+  const _HeroGreetingCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -123,18 +141,7 @@ class _WelcomeCardConnected extends ConsumerWidget {
           state.whenOrNull(authenticated: (user) => user.firstName) ??
           'Scholar'),
     );
-    return _WelcomeCard(userName: userName);
-  }
-}
 
-/// Welcome card with gradient and greeting.
-class _WelcomeCard extends StatelessWidget {
-  final String userName;
-
-  const _WelcomeCard({required this.userName});
-
-  @override
-  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -162,132 +169,276 @@ class _WelcomeCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.primary,
-            Color.lerp(colorScheme.primary, colorScheme.secondary, 0.5)!,
+            Color.lerp(colorScheme.primary, colorScheme.tertiary, 0.6)!,
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withAlpha(isDark ? 77 : 51),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: colorScheme.primary.withAlpha(isDark ? 60 : 80),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
+            spreadRadius: -4,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Icon(
-                greetingIcon,
-                color: Colors.white.withAlpha(204),
-                size: 18,
+          // Decorative circles
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(15),
               ),
-              const SizedBox(width: 8),
+            ),
+          ),
+          Positioned(
+            right: 20,
+            bottom: -30,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(10),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(25),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(greetingIcon,
+                            color: Colors.white.withAlpha(220), size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          greeting,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: Colors.white.withAlpha(220),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
               Text(
-                greeting,
+                userName,
+                style: textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'What would you like to learn today?',
                 style: textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withAlpha(204),
-                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withAlpha(180),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            userName,
-            style: textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'What would you like to learn today?',
-            style: textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withAlpha(179),
-            ),
-          ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
+    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.08, end: 0);
   }
 }
 
-/// Quick actions section with modern cards.
-class _QuickActionsSection extends ConsumerWidget {
-  const _QuickActionsSection();
+// ============================================================
+// Quick Actions (compact pill buttons)
+// ============================================================
+
+class _QuickActionsRow extends ConsumerWidget {
+  const _QuickActionsRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(
-          'Quick Actions',
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+        Expanded(
+          child: _QuickActionPill(
+            icon: LucideIcons.folderPlus,
+            label: 'New Project',
+            gradient: [
+              colorScheme.primary,
+              colorScheme.primary.withAlpha(180),
+            ],
+            onTap: () => CreateProjectSheet.show(context),
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _ModernActionCard(
-                icon: LucideIcons.folderPlus,
-                label: 'New Project',
-                color: colorScheme.primary,
-                onTap: () => CreateProjectSheet.show(context),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _ModernActionCard(
-                icon: LucideIcons.sparkles,
-                label: 'Quick Chat',
-                color: colorScheme.secondary,
-                onTap: () async {
-                  final config = await NewChatSheet.show(context);
-                  if (config == null || !context.mounted) return;
+        const SizedBox(width: 12),
+        Expanded(
+          child: _QuickActionPill(
+            icon: LucideIcons.sparkles,
+            label: 'Quick Chat',
+            gradient: [
+              colorScheme.secondary,
+              colorScheme.tertiary,
+            ],
+            onTap: () async {
+              final config = await NewChatSheet.show(context);
+              if (config == null || !context.mounted) return;
 
-                  final notifier = ref.read(createConversationNotifierProvider);
-                  final conversation = await notifier.createConversation(
-                    projectId: config.projectId,
-                    isSocratic: config.isSocratic,
-                    initialMessage: config.initialMessage,
-                  );
+              final notifier = ref.read(createConversationNotifierProvider);
+              final conversation = await notifier.createConversation(
+                projectId: config.projectId,
+                isSocratic: config.isSocratic,
+                initialMessage: config.initialMessage,
+              );
 
-                  if (conversation != null && context.mounted) {
-                    ref.read(conversationsNotifierProvider).addConversation(conversation);
-                    context.push('${AppRoutes.conversations}/${conversation.id}');
-                  }
-                },
-              ),
-            ),
-          ],
+              if (conversation != null && context.mounted) {
+                ref
+                    .read(conversationsNotifierProvider)
+                    .addConversation(conversation);
+                context
+                    .push('${AppRoutes.conversations}/${conversation.id}');
+              }
+            },
+          ),
         ),
       ],
     ).animate().fadeIn(delay: 100.ms, duration: 400.ms);
   }
 }
 
-/// Modern action card with glow effect.
-class _ModernActionCard extends StatelessWidget {
+class _QuickActionPill extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final List<Color> gradient;
   final VoidCallback onTap;
 
-  const _ModernActionCard({
+  const _QuickActionPill({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.gradient,
     required this.onTap,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: gradient),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 18, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Stats Strip (horizontal scrollable glassmorphic cards)
+// ============================================================
+
+class _StatsStrip extends ConsumerWidget {
+  const _StatsStrip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(dashboardStatsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final items = <_StatData>[
+      _StatData(
+        icon: LucideIcons.flame,
+        value: '${stats.dayStreak}',
+        label: 'Day Streak',
+        color: Colors.orange,
+      ),
+      _StatData(
+        icon: LucideIcons.messageSquare,
+        value: '${stats.totalConversations}',
+        label: 'Conversations',
+        color: colorScheme.secondary,
+      ),
+      _StatData(
+        icon: LucideIcons.folderOpen,
+        value: '${stats.totalProjects}',
+        label: 'Projects',
+        color: colorScheme.primary,
+      ),
+    ];
+
+    return SizedBox(
+      height: 90,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, i) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return _GlassStatCard(data: item);
+        },
+      ),
+    ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
+  }
+}
+
+class _StatData {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _StatData({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+}
+
+class _GlassStatCard extends StatelessWidget {
+  final _StatData data;
+
+  const _GlassStatCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -295,61 +446,61 @@ class _ModernActionCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Material(
-      color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          width: 120,
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            color: isDark
+                ? colorScheme.surfaceContainerHighest.withAlpha(200)
+                : colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: isDark
-                  ? colorScheme.outlineVariant.withAlpha(77)
-                  : colorScheme.outlineVariant,
+              color: data.color.withAlpha(isDark ? 60 : 40),
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: data.color.withAlpha(isDark ? 20 : 12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withAlpha(isDark ? 51 : 26),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 24,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                label,
-                style: textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
               Row(
                 children: [
-                  Text(
-                    'Tap to start',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: data.color.withAlpha(isDark ? 40 : 20),
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    child: Icon(data.icon, size: 14, color: data.color),
                   ),
                   const Spacer(),
-                  Icon(
-                    LucideIcons.arrowRight,
-                    size: 16,
-                    color: color,
+                  Text(
+                    data.value,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ],
+              ),
+              Text(
+                data.label,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -359,132 +510,200 @@ class _ModernActionCard extends StatelessWidget {
   }
 }
 
-/// Watches dashboard stats independently.
-class _StatsSectionConnected extends ConsumerWidget {
-  const _StatsSectionConnected();
+// ============================================================
+// Learning Progress Card (compact with mastery ring)
+// ============================================================
+
+class _LearningProgressCard extends ConsumerWidget {
+  const _LearningProgressCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(dashboardStatsProvider);
-    return _StatsSection(stats: stats);
-  }
-}
+    final notifier = ref.watch(progressStatsNotifierProvider);
 
-/// Stats section with real data.
-class _StatsSection extends StatelessWidget {
-  final DashboardStats stats;
+    return AnimatedBuilder(
+      animation: notifier,
+      builder: (context, _) {
+        if (notifier.isLoading || notifier.stats == null) {
+          return const SizedBox.shrink();
+        }
 
-  const _StatsSection({required this.stats});
+        if (notifier.error != null) {
+          return const SizedBox.shrink();
+        }
 
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+        final stats = notifier.stats!;
+        final quizAttempts = stats['total_quiz_attempts'] as int? ?? 0;
+        final avgScore =
+            (stats['avg_quiz_score'] as num?)?.toDouble() ?? 0;
+        final knowledge =
+            stats['knowledge'] as Map<String, dynamic>? ?? {};
+        final overallMastery =
+            (knowledge['overall_mastery'] as num?)?.toDouble() ?? 0;
+        final topicsStudied =
+            knowledge['total_topics_studied'] as int? ?? 0;
+        final streak = stats['study_streak'] as int? ?? 0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Your Progress',
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
+        if (quizAttempts == 0 && topicsStudied == 0) {
+          return const SizedBox.shrink();
+        }
+
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _ModernStatCard(
-                icon: LucideIcons.flame,
-                value: '${stats.dayStreak}',
-                label: 'Day Streak',
-                color: colorScheme.tertiary,
-              ),
+            _SectionHeader(
+              title: 'Learning Progress',
+              onViewAll: () => context.push(AppRoutes.progress),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _ModernStatCard(
-                icon: LucideIcons.messageSquare,
-                value: '${stats.totalConversations}',
-                label: 'Chats',
-                color: colorScheme.secondary,
+            if (streak > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withAlpha(isDark ? 30 : 20),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(LucideIcons.flame,
+                        size: 14, color: Colors.orange),
+                    const SizedBox(width: 5),
+                    Text(
+                      '$streak day streak!',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _ModernStatCard(
-                icon: LucideIcons.folder,
-                value: '${stats.totalProjects}',
-                label: 'Projects',
-                color: colorScheme.primary,
+            ],
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primaryContainer
+                        .withAlpha(isDark ? 80 : 160),
+                    colorScheme.tertiaryContainer
+                        .withAlpha(isDark ? 50 : 100),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: colorScheme.outlineVariant
+                      .withAlpha(isDark ? 30 : 60),
+                ),
+              ),
+              child: Row(
+                children: [
+                  MasteryRing(
+                    mastery: overallMastery,
+                    size: 72,
+                    strokeWidth: 7,
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Overall Mastery',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            _MiniChip(
+                              icon: LucideIcons.brainCircuit,
+                              value: '$quizAttempts',
+                              label: 'Quizzes',
+                              color: colorScheme.primary,
+                              isDark: isDark,
+                            ),
+                            const SizedBox(width: 10),
+                            _MiniChip(
+                              icon: LucideIcons.target,
+                              value: '${avgScore.round()}%',
+                              label: 'Avg',
+                              color: Colors.orange,
+                              isDark: isDark,
+                            ),
+                            const SizedBox(width: 10),
+                            _MiniChip(
+                              icon: LucideIcons.bookOpen,
+                              value: '$topicsStudied',
+                              label: 'Topics',
+                              color: Colors.green,
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-      ],
-    ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
+        ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
+      },
+    );
   }
 }
 
-/// Modern stat card with subtle background.
-class _ModernStatCard extends StatelessWidget {
+class _MiniChip extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
   final Color color;
+  final bool isDark;
 
-  const _ModernStatCard({
+  const _MiniChip({
     required this.icon,
     required this.value,
     required this.label,
     required this.color,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? colorScheme.outlineVariant.withAlpha(77)
-              : colorScheme.outlineVariant,
-        ),
+        color: color.withAlpha(isDark ? 25 : 15),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withAlpha(isDark ? 51 : 26),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 12),
+          Icon(icon, size: 14, color: color),
+          const SizedBox(height: 3),
           Text(
             value,
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
+            style: textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
           Text(
             label,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            style: textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 9,
             ),
           ),
         ],
@@ -493,16 +712,17 @@ class _ModernStatCard extends StatelessWidget {
   }
 }
 
-/// Section with title and View All button.
-class _RecentSection extends StatelessWidget {
+// ============================================================
+// Section Header
+// ============================================================
+
+class _SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback onViewAll;
-  final Widget child;
 
-  const _RecentSection({
+  const _SectionHeader({
     required this.title,
     required this.onViewAll,
-    required this.child,
   });
 
   @override
@@ -510,53 +730,49 @@ class _RecentSection extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: onViewAll,
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'View All',
-                    style: textTheme.labelMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    LucideIcons.arrowRight,
-                    size: 16,
-                    color: colorScheme.primary,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Text(
+          title,
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+          ),
         ),
-        const SizedBox(height: 12),
-        child,
+        TextButton(
+          onPressed: onViewAll,
+          style: TextButton.styleFrom(
+            foregroundColor: colorScheme.primary,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            visualDensity: VisualDensity.compact,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'View All',
+                style: textTheme.labelMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(LucideIcons.chevronRight,
+                  size: 16, color: colorScheme.primary),
+            ],
+          ),
+        ),
       ],
-    ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
+    );
   }
 }
 
-/// Recent conversations list with real data.
+// ============================================================
+// Recent Conversations List
+// ============================================================
+
 class _RecentConversationsList extends ConsumerWidget {
   const _RecentConversationsList();
 
@@ -571,22 +787,28 @@ class _RecentConversationsList extends ConsumerWidget {
         final state = conversationsNotifier.state;
 
         return state.when(
-          initial: () => _buildLoading(context),
-          loading: () => _buildLoading(context),
+          initial: () => _buildLoading(),
+          loading: () => _buildLoading(),
           loaded: (conversations, total, isLoadingMore, hasMore) {
             final recent = conversations.take(3).toList();
 
             if (recent.isEmpty) {
-              return _buildEmpty(context, 'No conversations yet');
+              return const EmptyStateCompact(
+                icon: LucideIcons.messageCircle,
+                message: 'No conversations yet',
+              );
             }
 
             return Column(
-              children: recent.map((conversation) {
-                return _ConversationTile(
+              children: List.generate(recent.length, (index) {
+                final conversation = recent[index];
+                return _ItemCard(
                   title: conversation.displayTitle,
-                  subtitle: conversation.projectName ?? 
-                      (conversation.isQuickChat ? 'Quick Chat' : 'Project Chat'),
-                  time: conversation.lastActivityRelative,
+                  subtitle: conversation.projectName ??
+                      (conversation.isQuickChat
+                          ? 'Quick Chat'
+                          : 'Project Chat'),
+                  trailing: conversation.lastActivityRelative,
                   icon: conversation.isQuickChat
                       ? LucideIcons.sparkles
                       : LucideIcons.bookOpen,
@@ -594,33 +816,39 @@ class _RecentConversationsList extends ConsumerWidget {
                       ? colorScheme.secondary
                       : colorScheme.primary,
                   onTap: () {
-                    context.push('${AppRoutes.conversations}/${conversation.id}');
+                    context.push(
+                        '${AppRoutes.conversations}/${conversation.id}');
                   },
-                );
-              }).toList(),
+                )
+                    .animate()
+                    .fadeIn(
+                      delay: Duration(milliseconds: 60 * index),
+                      duration: 350.ms,
+                    )
+                    .slideX(begin: 0.04, end: 0);
+              }),
             );
           },
-          error: (_) => _buildEmpty(context, 'Failed to load'),
+          error: (_) => const EmptyStateCompact(
+            icon: LucideIcons.messageCircle,
+            message: 'Failed to load',
+          ),
         );
       },
     );
   }
 
-  Widget _buildLoading(BuildContext context) {
+  Widget _buildLoading() {
     return Column(
       children: List.generate(3, (_) => const ShimmerHomeTile()),
     );
   }
-
-  Widget _buildEmpty(BuildContext context, String message) {
-    return EmptyStateCompact(
-      icon: LucideIcons.messageCircle,
-      message: message,
-    );
-  }
 }
 
-/// Projects list with real data.
+// ============================================================
+// Projects List
+// ============================================================
+
 class _ProjectsList extends ConsumerWidget {
   const _ProjectsList();
 
@@ -630,61 +858,71 @@ class _ProjectsList extends ConsumerWidget {
     final projectsState = ref.watch(projectsNotifierProvider);
 
     return projectsState.when(
-      initial: () => _buildLoading(context),
-      loading: () => _buildLoading(context),
+      initial: () => _buildLoading(),
+      loading: () => _buildLoading(),
       loaded: (projects, isLoadingMore, hasMore) {
-        final recent = projects.where((p) => !p.isArchived).take(3).toList();
+        final recent =
+            projects.where((p) => !p.isArchived).take(3).toList();
 
         if (recent.isEmpty) {
-          return _buildEmpty(context, 'No projects yet');
+          return const EmptyStateCompact(
+            icon: LucideIcons.folderOpen,
+            message: 'No projects yet',
+          );
         }
 
         return Column(
-          children: recent.map((project) {
-            return _ConversationTile(
+          children: List.generate(recent.length, (index) {
+            final project = recent[index];
+            return _ItemCard(
               title: project.name,
               subtitle: project.description ?? 'No description',
-              time: project.lastUpdatedRelative,
+              trailing: project.lastUpdatedRelative,
               icon: LucideIcons.folder,
               color: colorScheme.primary,
               onTap: () {
                 context.push('/projects/${project.id}');
               },
-            );
-          }).toList(),
+            )
+                .animate()
+                .fadeIn(
+                  delay: Duration(milliseconds: 60 * index),
+                  duration: 350.ms,
+                )
+                .slideX(begin: 0.04, end: 0);
+          }),
         );
       },
-      error: (_) => _buildEmpty(context, 'Failed to load'),
+      error: (_) => const EmptyStateCompact(
+        icon: LucideIcons.folderOpen,
+        message: 'Failed to load',
+      ),
     );
   }
 
-  Widget _buildLoading(BuildContext context) {
+  Widget _buildLoading() {
     return Column(
       children: List.generate(2, (_) => const ShimmerHomeTile()),
     );
   }
-
-  Widget _buildEmpty(BuildContext context, String message) {
-    return EmptyStateCompact(
-      icon: LucideIcons.folderOpen,
-      message: message,
-    );
-  }
 }
 
-/// Reusable tile for conversations and projects.
-class _ConversationTile extends StatelessWidget {
+// ============================================================
+// Item Card (conversations & projects)
+// ============================================================
+
+class _ItemCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String time;
+  final String trailing;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
-  const _ConversationTile({
+  const _ItemCard({
     required this.title,
     required this.subtitle,
-    required this.time,
+    required this.trailing,
     required this.icon,
     required this.color,
     required this.onTap,
@@ -699,54 +937,58 @@ class _ConversationTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isDark
-                    ? colorScheme.outlineVariant.withAlpha(51)
-                    : colorScheme.outlineVariant,
+                    ? colorScheme.outlineVariant.withAlpha(40)
+                    : colorScheme.outlineVariant.withAlpha(100),
               ),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: color.withAlpha(isDark ? 51 : 26),
+                    gradient: LinearGradient(
+                      colors: [
+                        color.withAlpha(isDark ? 50 : 30),
+                        color.withAlpha(isDark ? 30 : 15),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 22,
-                    color: color,
-                  ),
+                  child: Icon(icon, size: 20, color: color),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: textTheme.bodyLarge?.copyWith(
+                        style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         subtitle,
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -759,16 +1001,18 @@ class _ConversationTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      time,
+                      trailing,
                       style: textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
+                        fontSize: 11,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Icon(
                       LucideIcons.chevronRight,
-                      size: 16,
-                      color: colorScheme.onSurfaceVariant,
+                      size: 14,
+                      color:
+                          colorScheme.onSurfaceVariant.withAlpha(120),
                     ),
                   ],
                 ),
@@ -781,7 +1025,10 @@ class _ConversationTile extends StatelessWidget {
   }
 }
 
-/// Theme toggle button with smooth animation.
+// ============================================================
+// Notification Bell
+// ============================================================
+
 class _NotificationBellButton extends StatefulWidget {
   const _NotificationBellButton();
 
@@ -802,10 +1049,12 @@ class _NotificationBellButtonState extends State<_NotificationBellButton> {
   Future<void> _fetchUnreadCount() async {
     try {
       final client = ApiClient();
-      final response = await client.get(ApiConstants.notificationsUnreadCount);
+      final response =
+          await client.get(ApiConstants.notificationsUnreadCount);
       final data = response.data as Map<String, dynamic>;
       if (mounted) {
-        setState(() => _unreadCount = data['unread_count'] as int? ?? 0);
+        setState(
+            () => _unreadCount = data['unread_count'] as int? ?? 0);
       }
     } catch (_) {}
   }
@@ -824,11 +1073,12 @@ class _NotificationBellButtonState extends State<_NotificationBellButton> {
           icon: Icon(
             LucideIcons.bell,
             color: colorScheme.onSurfaceVariant,
-            size: 22,
+            size: 20,
           ),
           tooltip: 'Notifications',
           style: IconButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHighest.withAlpha(180),
+            backgroundColor:
+                colorScheme.surfaceContainerHighest.withAlpha(180),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -839,18 +1089,21 @@ class _NotificationBellButtonState extends State<_NotificationBellButton> {
             right: 6,
             top: 6,
             child: Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: colorScheme.error,
+                color: Colors.red,
                 shape: BoxShape.circle,
+                border: Border.all(
+                    color: colorScheme.surface, width: 1.5),
               ),
-              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              constraints:
+                  const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Center(
                 child: Text(
                   _unreadCount > 9 ? '9+' : '$_unreadCount',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -861,6 +1114,10 @@ class _NotificationBellButtonState extends State<_NotificationBellButton> {
     );
   }
 }
+
+// ============================================================
+// Theme Toggle
+// ============================================================
 
 class _ThemeToggleButton extends ConsumerWidget {
   @override
@@ -877,7 +1134,8 @@ class _ThemeToggleButton extends ConsumerWidget {
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (child, animation) {
           return RotationTransition(
-            turns: Tween<double>(begin: 0.5, end: 1.0).animate(animation),
+            turns: Tween<double>(begin: 0.5, end: 1.0)
+                .animate(animation),
             child: FadeTransition(
               opacity: animation,
               child: child,
@@ -888,7 +1146,7 @@ class _ThemeToggleButton extends ConsumerWidget {
           isDark ? LucideIcons.sun : LucideIcons.moon,
           key: ValueKey(isDark),
           color: colorScheme.onSurfaceVariant,
-          size: 22,
+          size: 20,
         ),
       ),
       tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
@@ -898,214 +1156,6 @@ class _ThemeToggleButton extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-    );
-  }
-}
-
-// ============================================================
-// Learning Progress Section
-// ============================================================
-
-class _LearningProgressSection extends ConsumerWidget {
-  const _LearningProgressSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.watch(progressStatsNotifierProvider);
-
-    return AnimatedBuilder(
-      animation: notifier,
-      builder: (context, _) {
-        if (notifier.isLoading || notifier.stats == null) {
-          return const SizedBox.shrink();
-        }
-
-        if (notifier.error != null) {
-          return const SizedBox.shrink();
-        }
-
-        final stats = notifier.stats!;
-        final quizAttempts = stats['total_quiz_attempts'] as int? ?? 0;
-        final avgScore = (stats['avg_quiz_score'] as num?)?.toDouble() ?? 0;
-        final knowledge =
-            stats['knowledge'] as Map<String, dynamic>? ?? {};
-        final overallMastery =
-            (knowledge['overall_mastery'] as num?)?.toDouble() ?? 0;
-        final topicsStudied =
-            knowledge['total_topics_studied'] as int? ?? 0;
-
-        if (quizAttempts == 0 && topicsStudied == 0) {
-          return const SizedBox.shrink();
-        }
-
-        final colorScheme = Theme.of(context).colorScheme;
-        final textTheme = Theme.of(context).textTheme;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-
-        final streak = stats['study_streak'] as int? ?? 0;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Learning Progress',
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.push(AppRoutes.progress),
-                  style: TextButton.styleFrom(
-                    foregroundColor: colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'View All',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(LucideIcons.arrowRight, size: 16, color: colorScheme.primary),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (streak > 0) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(LucideIcons.flame, size: 16, color: Colors.orange),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$streak day streak!',
-                    style: textTheme.labelMedium?.copyWith(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primaryContainer
-                        .withAlpha(isDark ? 80 : 150),
-                    colorScheme.tertiaryContainer
-                        .withAlpha(isDark ? 60 : 120),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: colorScheme.outlineVariant
-                      .withAlpha(isDark ? 38 : 77),
-                ),
-              ),
-              child: Row(
-                children: [
-                  MasteryRing(
-                    mastery: overallMastery,
-                    size: 72,
-                    strokeWidth: 7,
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Overall Mastery',
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _MiniStat(
-                              icon: LucideIcons.brainCircuit,
-                              value: '$quizAttempts',
-                              label: 'Quizzes',
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 16),
-                            _MiniStat(
-                              icon: LucideIcons.target,
-                              value: '${avgScore.round()}%',
-                              label: 'Avg Score',
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(width: 16),
-                            _MiniStat(
-                              icon: LucideIcons.bookOpen,
-                              value: '$topicsStudied',
-                              label: 'Topics',
-                              color: Colors.green,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
-      },
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  const _MiniStat({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 10,
-          ),
-        ),
-      ],
     );
   }
 }

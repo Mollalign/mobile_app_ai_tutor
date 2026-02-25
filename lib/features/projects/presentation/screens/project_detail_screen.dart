@@ -3,7 +3,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../domain/entities/entities.dart';
 import '../providers/providers.dart';
@@ -14,12 +13,6 @@ import 'tabs/conversations_tab.dart';
 import '../../../quizzes/presentation/screens/quizzes_tab.dart';
 import '../../../knowledge/presentation/screens/knowledge_tab.dart';
 
-/// Project detail screen with tabs.
-/// 
-/// Shows:
-/// - Overview: Project info and stats
-/// - Documents: List of uploaded documents
-/// - Conversations: Chats related to this project
 class ProjectDetailScreen extends ConsumerStatefulWidget {
   final String projectId;
 
@@ -29,7 +22,8 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
+  ConsumerState<ProjectDetailScreen> createState() =>
+      _ProjectDetailScreenState();
 }
 
 class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
@@ -48,16 +42,29 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
     super.dispose();
   }
 
+  Color _projectAccent(ColorScheme cs, String name) {
+    final hash = name.hashCode;
+    final colors = [
+      cs.primary,
+      cs.secondary,
+      cs.tertiary,
+      Colors.orange,
+      Colors.teal,
+      Colors.indigo,
+    ];
+    return colors[hash.abs() % colors.length];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final projectNotifier = ref.watch(projectDetailNotifierProvider(widget.projectId));
-    
+    final projectNotifier =
+        ref.watch(projectDetailNotifierProvider(widget.projectId));
+
     return AnimatedBuilder(
       animation: projectNotifier,
       builder: (context, _) {
         final state = projectNotifier.state;
 
-        // Load project if in initial state
         state.whenOrNull(
           initial: () {
             SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -97,39 +104,39 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Error'),
-      ),
+      appBar: AppBar(title: const Text('Error')),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                LucideIcons.alertCircle,
-                size: 48,
-                color: colorScheme.error,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Failed to load project',
-                style: textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(LucideIcons.alertCircle,
+                    size: 36, color: colorScheme.error),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: 20),
+              Text('Failed to load project',
+                  style: textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(message,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium
+                      ?.copyWith(color: colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: () {
-                  ref.read(projectDetailNotifierProvider(widget.projectId)).loadProject();
-                },
-                icon: const Icon(LucideIcons.refreshCw),
+                onPressed: () => ref
+                    .read(
+                        projectDetailNotifierProvider(widget.projectId))
+                    .loadProject(),
+                icon: const Icon(LucideIcons.refreshCw, size: 18),
                 label: const Text('Try Again'),
               ),
             ],
@@ -143,13 +150,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = _projectAccent(colorScheme, project.name);
 
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 160,
+              expandedHeight: 180,
               floating: false,
               pinned: true,
               backgroundColor: colorScheme.surface,
@@ -157,10 +165,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
               title: innerBoxIsScrolled ? Text(project.name) : null,
               actions: [
                 IconButton(
-                  onPressed: () => ProjectActionsSheet.show(context, project),
+                  onPressed: () =>
+                      ProjectActionsSheet.show(context, project),
                   icon: Icon(
                     LucideIcons.moreVertical,
-                    color: innerBoxIsScrolled ? null : Colors.white,
+                    color:
+                        innerBoxIsScrolled ? null : Colors.white,
                   ),
                 ),
               ],
@@ -168,7 +178,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                 onPressed: () => Navigator.of(context).pop(),
                 icon: Icon(
                   LucideIcons.arrowLeft,
-                  color: innerBoxIsScrolled ? null : Colors.white,
+                  color:
+                      innerBoxIsScrolled ? null : Colors.white,
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
@@ -178,80 +189,141 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        colorScheme.primary,
-                        Color.lerp(colorScheme.primary, colorScheme.secondary, 0.5)!,
+                        accent,
+                        Color.lerp(accent, colorScheme.tertiary, 0.5)!,
                       ],
                     ),
                   ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        AppSpacing.xxl,
-                        AppSpacing.lg,
-                        AppSpacing.lg,
+                  child: Stack(
+                    children: [
+                      // Decorative circles
+                      Positioned(
+                        right: -30,
+                        top: -10,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withAlpha(12),
+                          ),
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
+                      Positioned(
+                        left: -20,
+                        bottom: 40,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withAlpha(8),
+                          ),
+                        ),
+                      ),
+                      SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                              24, 56, 24, 24),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(38),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Icon(
-                                  project.isArchived
-                                      ? LucideIcons.archive
-                                      : LucideIcons.folder,
-                                  size: 22,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (project.isArchived)
-                                      Container(
-                                        margin: const EdgeInsets.only(bottom: 4),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withAlpha(30),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'Archived',
-                                          style: textTheme.labelSmall?.copyWith(
-                                            color: Colors.white.withAlpha(200),
-                                          ),
-                                        ),
-                                      ),
-                                    Text(
-                                      project.name,
-                                      style: textTheme.headlineSmall?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withAlpha(25),
+                                      borderRadius:
+                                          BorderRadius.circular(14),
                                     ),
-                                  ],
-                                ),
+                                    child: Icon(
+                                      project.isArchived
+                                          ? LucideIcons.archive
+                                          : LucideIcons.folder,
+                                      size: 22,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (project.isArchived)
+                                          Container(
+                                            margin:
+                                                const EdgeInsets.only(
+                                                    bottom: 4),
+                                            padding: const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 8,
+                                                vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withAlpha(20),
+                                              borderRadius:
+                                                  BorderRadius
+                                                      .circular(8),
+                                            ),
+                                            child: Text(
+                                              'Archived',
+                                              style: textTheme
+                                                  .labelSmall
+                                                  ?.copyWith(
+                                                color: Colors.white
+                                                    .withAlpha(200),
+                                              ),
+                                            ),
+                                          ),
+                                        Text(
+                                          project.name,
+                                          style: textTheme
+                                              .headlineSmall
+                                              ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight:
+                                                FontWeight.w800,
+                                            letterSpacing: -0.3,
+                                          ),
+                                          maxLines: 1,
+                                          overflow:
+                                              TextOverflow.ellipsis,
+                                        ),
+                                        if (project.hasDescription)
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(
+                                                    top: 4),
+                                            child: Text(
+                                              project.description!,
+                                              style: textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                color: Colors.white
+                                                    .withAlpha(170),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow
+                                                  .ellipsis,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -262,7 +334,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                     color: colorScheme.surface,
                     border: Border(
                       bottom: BorderSide(
-                        color: colorScheme.outlineVariant.withAlpha(isDark ? 38 : 77),
+                        color: colorScheme.outlineVariant
+                            .withAlpha(isDark ? 30 : 60),
                       ),
                     ),
                   ),
@@ -270,32 +343,39 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                     controller: _tabController,
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
-                    labelColor: colorScheme.primary,
-                    unselectedLabelColor: colorScheme.onSurfaceVariant,
-                    indicatorColor: colorScheme.primary,
+                    labelColor: accent,
+                    unselectedLabelColor:
+                        colorScheme.onSurfaceVariant,
+                    indicatorColor: accent,
                     indicatorWeight: 3,
+                    dividerHeight: 0,
                     labelStyle: textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                     tabs: const [
                       Tab(
-                        icon: Icon(LucideIcons.layoutDashboard, size: 18),
+                        icon: Icon(LucideIcons.layoutDashboard,
+                            size: 16),
                         text: 'Overview',
                       ),
                       Tab(
-                        icon: Icon(LucideIcons.fileText, size: 18),
+                        icon:
+                            Icon(LucideIcons.fileText, size: 16),
                         text: 'Docs',
                       ),
                       Tab(
-                        icon: Icon(LucideIcons.messageSquare, size: 18),
+                        icon: Icon(LucideIcons.messageSquare,
+                            size: 16),
                         text: 'Chats',
                       ),
                       Tab(
-                        icon: Icon(LucideIcons.brainCircuit, size: 18),
+                        icon: Icon(LucideIcons.brainCircuit,
+                            size: 16),
                         text: 'Quizzes',
                       ),
                       Tab(
-                        icon: Icon(LucideIcons.bookOpen, size: 18),
+                        icon:
+                            Icon(LucideIcons.bookOpen, size: 16),
                         text: 'Knowledge',
                       ),
                     ],

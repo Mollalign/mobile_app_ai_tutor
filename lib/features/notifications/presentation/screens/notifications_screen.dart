@@ -16,6 +16,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -24,7 +25,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _loadNotifications() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final client = ApiClient();
       final response = await client.get(ApiConstants.notificationsEndpoint);
@@ -35,10 +39,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('Failed to load notifications: $e');
       if (!mounted) return;
       setState(() {
         _notifications = [];
         _isLoading = false;
+        _errorMessage = 'Could not load notifications. Pull to retry.';
       });
     }
   }
@@ -64,35 +70,47 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: _isLoading
           ? const _LoadingBody()
-          : _notifications.isEmpty
-              ? _EmptyState(colorScheme: colorScheme, textTheme: textTheme)
-              : RefreshIndicator(
-                  onRefresh: _loadNotifications,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                    itemCount: _notifications.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final n = _notifications[index];
-                      return _NotificationTile(
-                        notification: n,
-                        isDark: isDark,
-                        colorScheme: colorScheme,
-                        textTheme: textTheme,
-                      ).animate().fadeIn(
-                            delay: Duration(milliseconds: 50 * index),
-                            duration: 300.ms,
-                          );
-                    },
-                  ),
-                ),
+          : _errorMessage != null
+              ? _ErrorBody(
+                  message: _errorMessage!,
+                  onRetry: _loadNotifications,
+                  colorScheme: colorScheme,
+                  textTheme: textTheme,
+                )
+              : _notifications.isEmpty
+                  ? _EmptyState(
+                      colorScheme: colorScheme, textTheme: textTheme)
+                  : RefreshIndicator(
+                      onRefresh: _loadNotifications,
+                      child: ListView.separated(
+                        padding:
+                            const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                        itemCount: _notifications.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final n = _notifications[index];
+                          return _NotificationTile(
+                            notification: n,
+                            isDark: isDark,
+                            colorScheme: colorScheme,
+                            textTheme: textTheme,
+                          ).animate().fadeIn(
+                                delay: Duration(
+                                    milliseconds: 50 * index),
+                                duration: 300.ms,
+                              );
+                        },
+                      ),
+                    ),
     );
   }
 
   Future<void> _markAllRead() async {
     try {
       final client = ApiClient();
-      await client.post('${ApiConstants.notificationsEndpoint}/mark-all-read');
+      await client.post(
+          '${ApiConstants.notificationsEndpoint}/mark-all-read');
       _loadNotifications();
     } catch (_) {}
   }
@@ -115,6 +133,50 @@ class _LoadingBody extends StatelessWidget {
           SizedBox(height: 12),
           ShimmerBox(width: double.infinity, height: 80),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _ErrorBody({
+    required this.message,
+    required this.onRetry,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.wifiOff,
+                size: 48, color: colorScheme.error.withAlpha(150)),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(LucideIcons.refreshCw, size: 16),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
