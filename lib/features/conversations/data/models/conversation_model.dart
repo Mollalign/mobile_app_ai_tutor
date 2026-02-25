@@ -144,6 +144,7 @@ class ConversationModel {
   final String id;
   final String userId;
   final String? projectId;
+  final String? projectName;
   final String? title;
   final bool isSocratic;
   final DateTime createdAt;
@@ -156,6 +157,7 @@ class ConversationModel {
     required this.id,
     required this.userId,
     this.projectId,
+    this.projectName,
     this.title,
     required this.isSocratic,
     required this.createdAt,
@@ -170,6 +172,7 @@ class ConversationModel {
       id: json['id'] as String,
       userId: json['user_id'] as String,
       projectId: json['project_id'] as String?,
+      projectName: json['project_name'] as String?,
       title: json['title'] as String?,
       isSocratic: json['is_socratic'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -201,12 +204,12 @@ class ConversationModel {
 /// Conversation with messages for chat view.
 class ConversationWithMessagesModel extends ConversationModel {
   final List<MessageModel> messages;
-  final String? projectName;
 
   const ConversationWithMessagesModel({
     required super.id,
     required super.userId,
     super.projectId,
+    super.projectName,
     super.title,
     required super.isSocratic,
     required super.createdAt,
@@ -215,7 +218,6 @@ class ConversationWithMessagesModel extends ConversationModel {
     super.lastMessageAt,
     required super.chatType,
     required this.messages,
-    this.projectName,
   });
 
   factory ConversationWithMessagesModel.fromJson(Map<String, dynamic> json) {

@@ -308,6 +308,7 @@ class ConversationRemoteDataSource {
           return StreamChunk(
             type: StreamChunkType.done,
             messageId: json['message_id'] as String?,
+            title: json['title'] as String?,
           );
 
         case 'error':
@@ -353,6 +354,7 @@ class StreamChunk {
   final List<SourceCitationModel>? sources;
   final String? messageId;
   final String? error;
+  final String? title;
 
   const StreamChunk({
     required this.type,
@@ -360,6 +362,7 @@ class StreamChunk {
     this.sources,
     this.messageId,
     this.error,
+    this.title,
   });
 
   bool get isContent => type == StreamChunkType.content;

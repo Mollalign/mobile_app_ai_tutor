@@ -342,7 +342,7 @@ class ChatChangeNotifier extends ChangeNotifier {
           notifyListeners();
         } else if (chunk.isDone) {
           finalMessageId = chunk.messageId;
-          _finishStreaming(finalMessageId, accumulatedContent, sources);
+          _finishStreaming(finalMessageId, accumulatedContent, sources, chunk.title);
         } else if (chunk.isError) {
           _handleStreamError(chunk.error ?? 'Unknown error');
         }
@@ -354,7 +354,7 @@ class ChatChangeNotifier extends ChangeNotifier {
         if (_state is ChatLoaded) {
           final loadedState = _state as ChatLoaded;
           if (loadedState.isStreaming) {
-            _finishStreaming(finalMessageId, accumulatedContent, sources);
+            _finishStreaming(finalMessageId, accumulatedContent, sources, null);
           }
         }
       },
@@ -365,15 +365,13 @@ class ChatChangeNotifier extends ChangeNotifier {
     String? messageId,
     String content,
     List<SourceCitation>? sources,
+    String? generatedTitle,
   ) {
     if (_state is! ChatLoaded) return;
     final currentState = _state as ChatLoaded;
 
-    // Replace streaming message with final message
-    // Use the accumulated content passed to this method, not the message's current content
     final messages = currentState.messages.map((m) {
       if (m.isStreaming) {
-        // First update the content, then finish streaming
         final withContent = m.copyWithContent(content);
         return withContent.finishStreaming(
           finalId: messageId ?? 'ai-${DateTime.now().millisecondsSinceEpoch}',
@@ -383,7 +381,27 @@ class ChatChangeNotifier extends ChangeNotifier {
       return m;
     }).toList();
 
+    // Update conversation title if the backend generated one
+    var conversation = currentState.conversation;
+    if (generatedTitle != null && generatedTitle.isNotEmpty) {
+      conversation = ConversationDetail(
+        id: conversation.id,
+        userId: conversation.userId,
+        projectId: conversation.projectId,
+        projectName: conversation.projectName,
+        title: generatedTitle,
+        isSocratic: conversation.isSocratic,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+        messageCount: conversation.messageCount + 1,
+        lastMessageAt: DateTime.now(),
+        chatType: conversation.chatType,
+        messages: messages,
+      );
+    }
+
     _state = currentState.copyWith(
+      conversation: conversation,
       messages: messages,
       isStreaming: false,
       streamingContent: null,

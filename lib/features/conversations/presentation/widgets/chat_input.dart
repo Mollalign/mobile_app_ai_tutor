@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-/// Attachment data for images or URLs.
 class ChatAttachment {
   final String? imageBase64;
   final String? imagePath;
@@ -20,12 +21,11 @@ class ChatAttachment {
     this.extractedUrl,
   });
 
-  bool get hasImage => imageBase64 != null || imagePath != null || imageUrl != null;
+  bool get hasImage =>
+      imageBase64 != null || imagePath != null || imageUrl != null;
   bool get hasUrl => extractedUrl != null;
 }
 
-/// Modern chat input widget with beautiful glass-morphic design.
-/// Premium feel with smooth animations and glowing accents.
 class ChatInput extends StatefulWidget {
   final Function(String, {ChatAttachment? attachment}) onSend;
   final bool isLoading;
@@ -75,27 +75,28 @@ class _ChatInputState extends State<ChatInput> {
 
   void _onTextChanged() {
     final hasText = _controller.text.trim().isNotEmpty;
-    if (hasText != _hasText) {
-      setState(() => _hasText = hasText);
-    }
+    if (hasText != _hasText) setState(() => _hasText = hasText);
   }
 
   void _onFocusChanged() {
     setState(() => _isFocused = _focusNode.hasFocus);
   }
 
-  bool get _canSend => (_hasText || _attachedImage != null) && !widget.isLoading;
+  bool get _canSend =>
+      (_hasText || _attachedImage != null) && !widget.isLoading;
 
   void _sendMessage() {
     final text = _controller.text.trim();
     if (!_canSend) return;
 
+    HapticFeedback.lightImpact();
     ChatAttachment? attachment;
     if (_attachedImageBase64 != null) {
       attachment = ChatAttachment(imageBase64: _attachedImageBase64);
     }
 
-    widget.onSend(text.isEmpty ? 'Analyze this image' : text, attachment: attachment);
+    widget.onSend(text.isEmpty ? 'Analyze this image' : text,
+        attachment: attachment);
     _controller.clear();
     _clearAttachment();
     _focusNode.requestFocus();
@@ -109,7 +110,6 @@ class _ChatInputState extends State<ChatInput> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-
       if (pickedFile != null) {
         final bytes = await pickedFile.readAsBytes();
         setState(() {
@@ -131,7 +131,6 @@ class _ChatInputState extends State<ChatInput> {
 
   void _showAttachmentOptions() {
     final colorScheme = Theme.of(context).colorScheme;
-
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -141,15 +140,17 @@ class _ChatInputState extends State<ChatInput> {
           children: [
             ListTile(
               leading: Icon(LucideIcons.camera, color: colorScheme.primary),
-              title: const Text('Take a photo'),
+              title: const Text('Take a photo', style: TextStyle(fontSize: 14)),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
               },
             ),
             ListTile(
-              leading: Icon(LucideIcons.image, color: colorScheme.secondary),
-              title: const Text('Choose from gallery'),
+              leading:
+                  Icon(LucideIcons.image, color: colorScheme.secondary),
+              title: const Text('Choose from gallery',
+                  style: TextStyle(fontSize: 14)),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -165,316 +166,233 @@ class _ChatInputState extends State<ChatInput> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        // Subtle gradient background
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colorScheme.surface.withAlpha(0),
-            colorScheme.surface,
-          ],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Image attachment preview
-              if (_attachedImage != null)
-                _AttachmentPreview(
-                  image: _attachedImage!,
-                  onRemove: _clearAttachment,
-                ),
-
-              // Main input container with glass effect
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? colorScheme.surfaceContainerHighest
-                      : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: _isFocused
-                        ? colorScheme.primary.withAlpha(128)
-                        : colorScheme.outlineVariant.withAlpha(isDark ? 51 : 77),
-                    width: _isFocused ? 1.5 : 1,
-                  ),
-                  // Subtle glow when focused
-                  boxShadow: _isFocused && isDark
-                      ? [
-                          BoxShadow(
-                            color: colorScheme.primary.withAlpha(26),
-                            blurRadius: 20,
-                            spreadRadius: -4,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Attachment button
-                    if (widget.enableImageAttachment)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 6, bottom: 6),
-                        child: _AttachmentButton(
-                          onTap: _showAttachmentOptions,
-                          hasAttachment: _attachedImage != null,
-                        ),
-                      ),
-
-                    // Socratic mode toggle
-                    if (widget.onToggleSocratic != null)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          left: widget.enableImageAttachment ? 0 : 6,
-                          bottom: 6,
-                        ),
-                        child: _ModeToggleButton(
-                          isSocratic: widget.isSocratic,
-                          onToggle: widget.onToggleSocratic!,
-                        ),
-                      ),
-
-                    // Text field
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        enabled: !widget.isLoading,
-                        maxLines: 5,
-                        minLines: 1,
-                        textCapitalization: TextCapitalization.sentences,
-                        textInputAction: TextInputAction.newline,
-                        keyboardType: TextInputType.multiline,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                          height: 1.4,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: _attachedImage != null
-                              ? 'Add a message (optional)...'
-                              : (widget.hintText ?? 'Ask anything...'),
-                          hintStyle: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant.withAlpha(128),
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.only(
-                            left: (widget.onToggleSocratic != null || widget.enableImageAttachment) ? 8 : 20,
-                            right: 8,
-                            top: 16,
-                            bottom: 16,
-                          ),
-                        ),
-                        onSubmitted: (_) => _sendMessage(),
-                      ),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withAlpha(isDark ? 220 : 240),
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant.withAlpha(isDark ? 30 : 50),
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Image preview
+                  if (_attachedImage != null)
+                    _AttachmentPreview(
+                      image: _attachedImage!,
+                      onRemove: _clearAttachment,
                     ),
 
-                    // Send button
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6, bottom: 6),
-                      child: _SendButton(
-                        isEnabled: _canSend,
-                        isLoading: widget.isLoading,
-                        onPressed: _sendMessage,
+                  // Input row
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? colorScheme.surfaceContainerHighest.withAlpha(180)
+                          : colorScheme.surfaceContainerHighest.withAlpha(200),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: _isFocused
+                            ? colorScheme.primary.withAlpha(100)
+                            : colorScheme.outlineVariant
+                                .withAlpha(isDark ? 35 : 60),
+                        width: _isFocused ? 1.5 : 1,
+                      ),
+                      boxShadow: _isFocused
+                          ? [
+                              BoxShadow(
+                                color:
+                                    colorScheme.primary.withAlpha(isDark ? 18 : 10),
+                                blurRadius: 16,
+                                spreadRadius: -2,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Left actions
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.enableImageAttachment)
+                                _CircleAction(
+                                  icon: _attachedImage != null
+                                      ? LucideIcons.paperclip
+                                      : LucideIcons.plus,
+                                  isActive: _attachedImage != null,
+                                  onTap: _showAttachmentOptions,
+                                ),
+                              if (widget.onToggleSocratic != null)
+                                _CircleAction(
+                                  icon: LucideIcons.graduationCap,
+                                  isActive: widget.isSocratic,
+                                  activeColor: colorScheme.tertiary,
+                                  onTap: widget.onToggleSocratic!,
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // TextField
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            enabled: !widget.isLoading,
+                            maxLines: 5,
+                            minLines: 1,
+                            textCapitalization:
+                                TextCapitalization.sentences,
+                            textInputAction: TextInputAction.newline,
+                            keyboardType: TextInputType.multiline,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              color: colorScheme.onSurface,
+                              height: 1.4,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: _attachedImage != null
+                                  ? 'Add a message...'
+                                  : (widget.hintText ??
+                                      'Ask anything...'),
+                              hintStyle: TextStyle(
+                                fontSize: 13.5,
+                                color: colorScheme.onSurfaceVariant
+                                    .withAlpha(110),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.only(
+                                left: (widget.onToggleSocratic !=
+                                            null ||
+                                        widget
+                                            .enableImageAttachment)
+                                    ? 6
+                                    : 16,
+                                right: 6,
+                                top: 13,
+                                bottom: 13,
+                              ),
+                            ),
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
+                        ),
+
+                        // Send button
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              right: 4, bottom: 4),
+                          child: _SendButton(
+                            isEnabled: _canSend,
+                            isLoading: widget.isLoading,
+                            onPressed: _sendMessage,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Mode label
+                  if (widget.onToggleSocratic != null) ...[
+                    const SizedBox(height: 6),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Row(
+                        key: ValueKey(widget.isSocratic),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            widget.isSocratic
+                                ? LucideIcons.graduationCap
+                                : LucideIcons.messageSquare,
+                            size: 10,
+                            color: widget.isSocratic
+                                ? colorScheme.tertiary.withAlpha(150)
+                                : colorScheme.onSurfaceVariant
+                                    .withAlpha(100),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            widget.isSocratic
+                                ? 'Socratic mode · Guides with questions'
+                                : 'Direct mode · Straight answers',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: colorScheme.onSurfaceVariant
+                                  .withAlpha(110),
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-
-              // Mode indicator
-              if (widget.onToggleSocratic != null) ...[
-                const SizedBox(height: 8),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: Row(
-                    key: ValueKey(widget.isSocratic),
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        widget.isSocratic
-                            ? LucideIcons.graduationCap
-                            : LucideIcons.messageSquare,
-                        size: 12,
-                        color: widget.isSocratic
-                            ? colorScheme.tertiary.withAlpha(179)
-                            : colorScheme.onSurfaceVariant.withAlpha(128),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        widget.isSocratic
-                            ? 'Socratic mode • Guides with questions'
-                            : 'Direct mode • Straight answers',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withAlpha(128),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Attachment button with plus icon.
-class _AttachmentButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final bool hasAttachment;
-
-  const _AttachmentButton({
-    required this.onTap,
-    required this.hasAttachment,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: hasAttachment
-                ? colorScheme.primaryContainer
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Icon(
-            hasAttachment ? LucideIcons.paperclip : LucideIcons.plus,
-            size: 20,
-            color: hasAttachment
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant.withAlpha(179),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Attachment preview with remove button.
-class _AttachmentPreview extends StatelessWidget {
-  final File image;
-  final VoidCallback onRemove;
-
-  const _AttachmentPreview({
-    required this.image,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  image,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                top: -4,
-                right: -4,
-                child: Material(
-                  color: colorScheme.error,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: onRemove,
-                    borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        LucideIcons.x,
-                        size: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Image attached',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
             ),
           ),
-        ],
+        ),
       ),
-    ).animate().fadeIn().slideY(begin: 0.2);
+    );
   }
 }
 
-/// Mode toggle button with beautiful animation.
-class _ModeToggleButton extends StatelessWidget {
-  final bool isSocratic;
-  final VoidCallback onToggle;
+// ─── Circle Action Button ──────────────────────────────────────
 
-  const _ModeToggleButton({
-    required this.isSocratic,
-    required this.onToggle,
+class _CircleAction extends StatelessWidget {
+  final IconData icon;
+  final bool isActive;
+  final Color? activeColor;
+  final VoidCallback onTap;
+
+  const _CircleAction({
+    required this.icon,
+    this.isActive = false,
+    this.activeColor,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = activeColor ?? colorScheme.primary;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onToggle,
-        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(18),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 40,
-          height: 40,
+          duration: const Duration(milliseconds: 180),
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
-            color: isSocratic
-                ? colorScheme.tertiaryContainer.withAlpha(isDark ? 77 : 128)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
+            color: isActive ? color.withAlpha(20) : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
           ),
           child: Icon(
-            LucideIcons.graduationCap,
-            size: 20,
-            color: isSocratic
-                ? colorScheme.tertiary
-                : colorScheme.onSurfaceVariant.withAlpha(128),
+            icon,
+            size: 17,
+            color: isActive
+                ? color
+                : colorScheme.onSurfaceVariant.withAlpha(140),
           ),
         ),
       ),
@@ -482,7 +400,8 @@ class _ModeToggleButton extends StatelessWidget {
   }
 }
 
-/// Beautiful animated send button with glow effect.
+// ─── Send Button ───────────────────────────────────────────────
+
 class _SendButton extends StatelessWidget {
   final bool isEnabled;
   final bool isLoading;
@@ -501,31 +420,26 @@ class _SendButton extends StatelessWidget {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         gradient: isEnabled
             ? LinearGradient(
                 colors: [
                   colorScheme.primary,
-                  Color.fromRGBO(
-                    (colorScheme.primary.r * 255.0).round().clamp(0, 255),
-                    (colorScheme.primary.g * 255.0).round().clamp(0, 255),
-                    ((colorScheme.primary.b * 255) * 0.85).round().clamp(0, 255),
-                    1,
-                  ),
+                  colorScheme.primary.withAlpha(200),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : null,
-        color: isEnabled ? null : colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: isEnabled && isDark
+        color: isEnabled ? null : colorScheme.surfaceContainerHigh.withAlpha(120),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: isEnabled
             ? [
                 BoxShadow(
-                  color: colorScheme.primary.withAlpha(77),
-                  blurRadius: 12,
+                  color: colorScheme.primary.withAlpha(isDark ? 50 : 35),
+                  blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
               ]
@@ -535,14 +449,14 @@ class _SendButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isEnabled && !isLoading ? onPressed : null,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           child: Center(
             child: isLoading
                 ? SizedBox(
-                    width: 18,
-                    height: 18,
+                    width: 15,
+                    height: 15,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                      strokeWidth: 1.8,
                       color: isEnabled
                           ? Colors.white
                           : colorScheme.onSurfaceVariant,
@@ -550,24 +464,84 @@ class _SendButton extends StatelessWidget {
                   )
                 : Icon(
                     LucideIcons.arrowUp,
-                    size: 20,
+                    size: 17,
                     color: isEnabled
                         ? Colors.white
-                        : colorScheme.onSurfaceVariant.withAlpha(128),
+                        : colorScheme.onSurfaceVariant.withAlpha(100),
                   ),
           ),
         ),
       ),
     ).animate(target: isEnabled ? 1 : 0).scale(
-          begin: const Offset(0.9, 0.9),
+          begin: const Offset(0.92, 0.92),
           end: const Offset(1, 1),
-          duration: 200.ms,
+          duration: 180.ms,
           curve: Curves.easeOut,
         );
   }
 }
 
-/// Simplified chat input for quick use.
+// ─── Attachment Preview ────────────────────────────────────────
+
+class _AttachmentPreview extends StatelessWidget {
+  final File image;
+  final VoidCallback onRemove;
+
+  const _AttachmentPreview({required this.image, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.file(image,
+                    width: 52, height: 52, fit: BoxFit.cover),
+              ),
+              Positioned(
+                top: -5,
+                right: -5,
+                child: GestureDetector(
+                  onTap: onRemove,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: colorScheme.surface, width: 1.5),
+                    ),
+                    child: const Icon(LucideIcons.x,
+                        size: 10, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Image attached',
+            style: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: 0.15);
+  }
+}
+
+// ─── Simple Chat Input ─────────────────────────────────────────
+
 class SimpleChatInput extends StatefulWidget {
   final Function(String) onSend;
   final bool isLoading;
@@ -605,15 +579,12 @@ class _SimpleChatInputState extends State<SimpleChatInput> {
 
   void _onTextChanged() {
     final hasText = _controller.text.trim().isNotEmpty;
-    if (hasText != _hasText) {
-      setState(() => _hasText = hasText);
-    }
+    if (hasText != _hasText) setState(() => _hasText = hasText);
   }
 
   void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty || widget.isLoading) return;
-
     widget.onSend(text);
     _controller.clear();
   }
@@ -621,16 +592,18 @@ class _SimpleChatInputState extends State<SimpleChatInput> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Container(
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(28),
+          color: isDark
+              ? colorScheme.surfaceContainerHighest.withAlpha(180)
+              : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: colorScheme.outlineVariant.withAlpha(77),
+            color: colorScheme.outlineVariant.withAlpha(isDark ? 35 : 60),
           ),
         ),
         child: Row(
@@ -641,23 +614,22 @@ class _SimpleChatInputState extends State<SimpleChatInput> {
                 focusNode: _focusNode,
                 enabled: !widget.isLoading,
                 textInputAction: TextInputAction.send,
-                style: textTheme.bodyMedium,
+                style: TextStyle(fontSize: 13.5, color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: widget.hintText ?? 'Message...',
-                  hintStyle: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withAlpha(128),
+                  hintStyle: TextStyle(
+                    fontSize: 13.5,
+                    color: colorScheme.onSurfaceVariant.withAlpha(110),
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
+                      horizontal: 16, vertical: 12),
                 ),
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.only(right: 4),
               child: _SendButton(
                 isEnabled: _hasText && !widget.isLoading,
                 isLoading: widget.isLoading,

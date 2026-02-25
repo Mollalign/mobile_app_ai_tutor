@@ -6,22 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../../../sharing/presentation/widgets/share_conversation_sheet.dart';
 import '../../domain/entities/entities.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
-/// Chat screen for a single conversation.
-/// Clean, minimal design focused on the conversation.
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
 
-  const ChatScreen({
-    super.key,
-    required this.conversationId,
-  });
+  const ChatScreen({super.key, required this.conversationId});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -52,9 +46,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
-  /// Only triggers a top-level rebuild when the state TYPE changes
-  /// or conversation metadata (title/socratic) changes — not on every
-  /// streaming chunk. This keeps the Scaffold and AppBar stable.
   void _onNotifierChanged() {
     if (!mounted || _notifier == null) return;
     final state = _notifier!.state;
@@ -82,97 +73,141 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatNotifier = ref.watch(chatNotifierProvider(widget.conversationId));
+    final chatNotifier =
+        ref.watch(chatNotifierProvider(widget.conversationId));
     final state = chatNotifier.state;
 
     if (state is ChatLoaded) {
-      return _buildLoadedScaffold(context, chatNotifier, state);
+      return _buildLoaded(context, chatNotifier, state);
     }
     if (state is ChatError) {
-      return _buildErrorScaffold(context, state.message);
+      return _buildError(context, state.message);
     }
-    return _buildLoadingScaffold(context);
+    return _buildLoading(context);
   }
 
-  Widget _buildLoadingScaffold(BuildContext context) {
+  // ── Loading ────────────────────────────────────────────────
+
+  Widget _buildLoading(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: _minimalAppBar(context),
       body: const ShimmerChatMessages(),
     );
   }
 
-  Widget _buildErrorScaffold(BuildContext context, String message) {
+  // ── Error ──────────────────────────────────────────────────
+
+  Widget _buildError(BuildContext context, String message) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: _minimalAppBar(context),
       body: ErrorState(
         message: message,
-        onRetry: () => ref
-            .read(chatNotifierProvider(widget.conversationId))
-            .loadChat(),
+        onRetry: () =>
+            ref.read(chatNotifierProvider(widget.conversationId)).loadChat(),
       ),
     );
   }
 
-  Widget _buildLoadedScaffold(
+  AppBar _minimalAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+    );
+  }
+
+  // ── Loaded ─────────────────────────────────────────────────
+
+  Widget _buildLoaded(
     BuildContext context,
     ChatChangeNotifier chatNotifier,
     ChatLoaded state,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final conversation = state.conversation;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
+        scrolledUnderElevation: 0.5,
+        surfaceTintColor: colorScheme.primary.withAlpha(20),
         centerTitle: true,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: Icon(
+            LucideIcons.chevronLeft,
+            size: 20,
+            color: colorScheme.onSurface,
+          ),
+        ),
         title: GestureDetector(
           onTap: () => _showConversationInfo(context, conversation),
           child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Status dot
               Container(
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 decoration: BoxDecoration(
-                  color: conversation.isProjectChat
-                      ? colorScheme.primary
-                      : colorScheme.secondary,
-                  shape: BoxShape.circle,
-                ),
-                ),
-              const SizedBox(width: AppSpacing.sm),
-                Flexible(
-                  child: Text(
-                  conversation.displayTitle,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  gradient: LinearGradient(
+                    colors: conversation.isProjectChat
+                        ? [colorScheme.primary, colorScheme.primary.withAlpha(180)]
+                        : [colorScheme.secondary, colorScheme.secondary.withAlpha(180)],
                   ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: (conversation.isProjectChat
+                              ? colorScheme.primary
+                              : colorScheme.secondary)
+                          .withAlpha(isDark ? 60 : 40),
+                      blurRadius: 4,
+                    ),
+                  ],
                 ),
-              const SizedBox(width: 4),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  conversation.displayTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 3),
               Icon(
                 LucideIcons.chevronDown,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-            ),
-          ],
+                size: 13,
+                color: colorScheme.onSurfaceVariant.withAlpha(130),
+              ),
+            ],
           ),
         ),
         actions: [
           IconButton(
-            onPressed: () => _showOptionsMenu(context, conversation),
-            icon: const Icon(LucideIcons.moreHorizontal),
+            onPressed: () =>
+                _showOptionsMenu(context, conversation),
+            icon: Icon(
+              LucideIcons.moreHorizontal,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
             tooltip: 'Options',
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -206,63 +241,69 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
   }
 
-  void _showConversationInfo(BuildContext context, ConversationDetail conversation) {
+  // ── Info Sheet ─────────────────────────────────────────────
+
+  void _showConversationInfo(
+      BuildContext context, ConversationDetail conversation) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
       builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          0,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               conversation.displayTitle,
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _InfoChip(
                   icon: conversation.isProjectChat
                       ? LucideIcons.bookOpen
                       : LucideIcons.sparkles,
-                  label: conversation.isProjectChat ? 'Project Chat' : 'Quick Chat',
+                  label: conversation.isProjectChat
+                      ? 'Project Chat'
+                      : 'Quick Chat',
                   color: colorScheme.primary,
                 ),
-                const SizedBox(width: AppSpacing.sm),
                 if (conversation.isSocratic)
                   _InfoChip(
                     icon: LucideIcons.graduationCap,
                     label: 'Socratic',
                     color: colorScheme.tertiary,
                   ),
+                _InfoChip(
+                  icon: LucideIcons.messageCircle,
+                  label: '${conversation.messageCount} messages',
+                  color: colorScheme.secondary,
+                ),
               ],
             ),
-            if (conversation.isProjectChat && conversation.projectName != null) ...[
-              const SizedBox(height: AppSpacing.md),
+            if (conversation.isProjectChat &&
+                conversation.projectName != null) ...[
+              const SizedBox(height: 14),
               Row(
                 children: [
-                  Icon(
-                    LucideIcons.folder,
-                    size: 16,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
+                  Icon(LucideIcons.folder,
+                      size: 14, color: colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 7),
                   Expanded(
                     child: Text(
                       conversation.projectName!,
-                      style: textTheme.bodyMedium?.copyWith(
+                      style: TextStyle(
+                        fontSize: 13,
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -270,14 +311,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
           ],
         ),
       ),
     );
   }
 
-  void _showOptionsMenu(BuildContext context, ConversationDetail conversation) {
+  // ── Options Menu ───────────────────────────────────────────
+
+  void _showOptionsMenu(
+      BuildContext context, ConversationDetail conversation) {
     final colorScheme = Theme.of(context).colorScheme;
 
     showModalBottomSheet(
@@ -287,35 +330,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(LucideIcons.pencil),
-              title: const Text('Rename'),
+            _OptionTile(
+              icon: LucideIcons.pencil,
+              label: 'Rename',
               onTap: () {
                 Navigator.pop(context);
                 _showRenameDialog(context, conversation);
               },
             ),
-            ListTile(
-              leading: Icon(
-                LucideIcons.share2,
-                color: colorScheme.primary,
-              ),
-              title: const Text('Share conversation'),
+            _OptionTile(
+              icon: LucideIcons.share2,
+              label: 'Share conversation',
+              color: colorScheme.primary,
               onTap: () {
                 Navigator.pop(context);
                 _showShareSheet(context, conversation);
               },
             ),
-            ListTile(
-              leading: Icon(
-                conversation.isSocratic
-                    ? LucideIcons.graduationCap
-                    : LucideIcons.messageSquare,
-                color: colorScheme.tertiary,
-              ),
-              title: Text(conversation.isSocratic
+            _OptionTile(
+              icon: conversation.isSocratic
+                  ? LucideIcons.graduationCap
+                  : LucideIcons.messageSquare,
+              label: conversation.isSocratic
                   ? 'Switch to Direct mode'
-                  : 'Switch to Socratic mode'),
+                  : 'Switch to Socratic mode',
+              color: colorScheme.tertiary,
               onTap: () {
                 Navigator.pop(context);
                 ref
@@ -323,26 +362,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     .toggleSocraticMode();
               },
             ),
-            const Divider(),
-            ListTile(
-              leading: Icon(LucideIcons.trash2, color: colorScheme.error),
-              title: Text(
-                'Delete conversation',
-                style: TextStyle(color: colorScheme.error),
-              ),
+            Divider(
+              color: colorScheme.outlineVariant.withAlpha(60),
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+            ),
+            _OptionTile(
+              icon: LucideIcons.trash2,
+              label: 'Delete conversation',
+              color: colorScheme.error,
               onTap: () {
                 Navigator.pop(context);
                 _confirmDelete(context, conversation);
               },
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 12),
           ],
         ),
       ),
     );
   }
 
-  void _showShareSheet(BuildContext context, ConversationDetail conversation) {
+  void _showShareSheet(
+      BuildContext context, ConversationDetail conversation) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -354,54 +397,60 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  void _showRenameDialog(BuildContext context, ConversationDetail conversation) {
-    final controller = TextEditingController(text: conversation.title ?? '');
+  void _showRenameDialog(
+      BuildContext context, ConversationDetail conversation) {
+    final controller =
+        TextEditingController(text: conversation.title ?? '');
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Rename conversation'),
+        title: const Text('Rename conversation',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter a title',
-          ),
+          decoration: const InputDecoration(hintText: 'Enter a title'),
           autofocus: true,
+          style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontSize: 13)),
           ),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  ref
-                      .read(chatNotifierProvider(widget.conversationId))
-                      .updateTitle(controller.text.trim());
-                },
-                child: const Text('Save'),
-              ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(chatNotifierProvider(widget.conversationId))
+                  .updateTitle(controller.text.trim());
+            },
+            child: const Text('Save', style: TextStyle(fontSize: 13)),
+          ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, ConversationDetail conversation) {
+  void _confirmDelete(
+      BuildContext context, ConversationDetail conversation) {
     final colorScheme = Theme.of(context).colorScheme;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        icon: Icon(LucideIcons.alertTriangle, color: colorScheme.error),
-        title: const Text('Delete conversation?'),
+        icon: Icon(LucideIcons.alertTriangle,
+            color: colorScheme.error, size: 28),
+        title: const Text('Delete conversation?',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         content: const Text(
           'This will permanently delete this conversation and all messages.',
+          style: TextStyle(fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontSize: 13)),
           ),
           FilledButton(
             onPressed: () async {
@@ -409,14 +458,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               await ref
                   .read(conversationsNotifierProvider)
                   .deleteConversation(widget.conversationId);
-              if (context.mounted) {
-                context.pop();
-              }
+              if (context.mounted) context.pop();
             },
             style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-            ),
-            child: const Text('Delete'),
+                backgroundColor: colorScheme.error),
+            child: const Text('Delete', style: TextStyle(fontSize: 13)),
           ),
         ],
       ),
@@ -424,7 +470,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
-/// Scoped messages list — only this subtree rebuilds during streaming.
+// ─── Messages List ─────────────────────────────────────────────
+
 class _ChatMessagesList extends StatefulWidget {
   final ChatChangeNotifier chatNotifier;
   final ScrollController scrollController;
@@ -447,12 +494,12 @@ class _ChatMessagesListState extends State<_ChatMessagesList> {
 
   void _scrollToBottom() {
     if (widget.scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
+      Future.delayed(const Duration(milliseconds: 80), () {
         if (!mounted) return;
         widget.scrollController.animateTo(
           widget.scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
         );
       });
     }
@@ -486,10 +533,10 @@ class _ChatMessagesListState extends State<_ChatMessagesList> {
 
         return ListView.builder(
           controller: widget.scrollController,
-          padding: const EdgeInsets.only(
-            top: AppSpacing.sm,
-            bottom: AppSpacing.sm,
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
           ),
+          padding: const EdgeInsets.only(top: 6, bottom: 6),
           itemCount: messages.length,
           itemBuilder: (context, index) {
             final message = messages[index];
@@ -507,7 +554,8 @@ class _ChatMessagesListState extends State<_ChatMessagesList> {
   }
 }
 
-/// Scoped input bar — rebuilds only when isLoading changes.
+// ─── Input Wrapper ─────────────────────────────────────────────
+
 class _ChatInputWrapper extends StatelessWidget {
   final ChatChangeNotifier chatNotifier;
   final ConversationDetail conversation;
@@ -544,7 +592,8 @@ class _ChatInputWrapper extends StatelessWidget {
   }
 }
 
-/// Info chip for conversation details.
+// ─── Info Chip ─────────────────────────────────────────────────
+
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -559,22 +608,20 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withAlpha(26),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: color.withAlpha(18),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            style: TextStyle(
+              fontSize: 11.5,
               color: color,
               fontWeight: FontWeight.w500,
             ),
@@ -585,7 +632,36 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-/// Empty state with welcoming prompts.
+// ─── Option Tile ───────────────────────────────────────────────
+
+class _OptionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _OptionTile({
+    required this.icon,
+    required this.label,
+    this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? Theme.of(context).colorScheme.onSurface;
+
+    return ListTile(
+      leading: Icon(icon, size: 18, color: c),
+      title: Text(label, style: TextStyle(fontSize: 14, color: c)),
+      onTap: onTap,
+      visualDensity: const VisualDensity(vertical: -1),
+    );
+  }
+}
+
+// ─── Empty Chat ────────────────────────────────────────────────
+
 class _EmptyChat extends StatelessWidget {
   final ConversationDetail conversation;
   final Function(String) onSendMessage;
@@ -598,69 +674,68 @@ class _EmptyChat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     final prompts = conversation.isProjectChat
         ? [
-            'Summarize the key concepts',
-            'What are the main topics?',
-            'Quiz me on this material',
+            ('Summarize the key concepts', LucideIcons.listChecks),
+            ('What are the main topics?', LucideIcons.bookOpen),
+            ('Quiz me on this material', LucideIcons.brain),
           ]
         : [
-            'Explain recursion simply',
-            'What is Big O notation?',
-            'Difference between stack & queue',
+            ('Explain recursion simply', LucideIcons.repeat),
+            ('What is Big O notation?', LucideIcons.timer),
+            ('Stack vs Queue differences', LucideIcons.layers),
           ];
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AppLogo(size: 72)
+            const AppLogo(size: 56)
                 .animate()
                 .scale(duration: 400.ms, curve: Curves.elasticOut),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Welcome text
+            const SizedBox(height: 20),
             Text(
-              'How can I help you?',
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              'How can I help?',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+                letterSpacing: -0.3,
               ),
             ).animate().fadeIn(delay: 100.ms),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Subtitle
+            const SizedBox(height: 6),
             Text(
               conversation.isSocratic
                   ? "I'll guide your learning with questions"
                   : "I'll answer your questions directly",
               textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                fontSize: 13,
                 color: colorScheme.onSurfaceVariant,
+                height: 1.4,
               ),
             ).animate().fadeIn(delay: 200.ms),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: 28),
 
-            // Suggested prompts
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              alignment: WrapAlignment.center,
-              children: prompts.asMap().entries.map((entry) {
+            // Suggestion chips
+            ...prompts.asMap().entries.map((entry) {
               final index = entry.key;
-              final prompt = entry.value;
-                return _SuggestionChip(
-                  text: prompt,
-                  onTap: () => onSendMessage(prompt),
-                ).animate().fadeIn(delay: (300 + index * 100).ms).slideY(
-                      begin: 0.2,
-                      duration: 300.ms,
-                    );
-              }).toList(),
-                    ),
+              final (text, icon) = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SuggestionCard(
+                  text: text,
+                  icon: icon,
+                  onTap: () => onSendMessage(text),
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: (280 + index * 80).ms)
+                  .slideY(begin: 0.12, duration: 280.ms, curve: Curves.easeOutCubic);
+            }),
           ],
         ),
       ),
@@ -668,37 +743,72 @@ class _EmptyChat extends StatelessWidget {
   }
 }
 
-/// Suggestion chip button.
-class _SuggestionChip extends StatelessWidget {
+// ─── Suggestion Card ───────────────────────────────────────────
+
+class _SuggestionCard extends StatelessWidget {
   final String text;
+  final IconData icon;
   final VoidCallback onTap;
 
-  const _SuggestionChip({
+  const _SuggestionCard({
     required this.text,
+    required this.icon,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(20),
+      color: isDark
+          ? colorScheme.surfaceContainerHighest.withAlpha(140)
+          : colorScheme.surfaceContainerHighest.withAlpha(180),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withAlpha(isDark ? 25 : 50),
+            ),
           ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withAlpha(isDark ? 25 : 15),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 14, color: colorScheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Text(
                   text,
-                  style: textTheme.bodyMedium?.copyWith(
+                  style: TextStyle(
+                    fontSize: 13,
                     color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
+                ),
+              ),
+              Icon(
+                LucideIcons.arrowRight,
+                size: 14,
+                color: colorScheme.onSurfaceVariant.withAlpha(100),
+              ),
+            ],
           ),
         ),
       ),

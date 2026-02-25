@@ -36,6 +36,7 @@ class ConversationMapper {
       id: model.id,
       userId: model.userId,
       projectId: model.projectId,
+      projectName: model.projectName,
       title: model.title,
       isSocratic: model.isSocratic,
       createdAt: model.createdAt,
