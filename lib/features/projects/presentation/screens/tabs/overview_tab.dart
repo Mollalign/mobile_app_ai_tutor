@@ -11,6 +11,8 @@ import '../../../../../app/router.dart';
 import '../../../../../core/constants/app_spacing.dart';
 import '../../../../conversations/presentation/providers/providers.dart';
 import '../../../../documents/presentation/providers/providers.dart';
+import '../../../../quizzes/presentation/widgets/generate_quiz_sheet.dart';
+import '../../../../quizzes/presentation/providers/quiz_provider.dart';
 import '../../../domain/entities/entities.dart';
 
 /// Overview tab showing project information and stats.
@@ -152,6 +154,14 @@ class OverviewTab extends ConsumerWidget {
                     onTap: () => _createNewChat(context, ref),
                   ),
                 ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: LucideIcons.brainCircuit,
+                    label: 'Generate\nQuiz',
+                    onTap: () => _generateQuiz(context, ref),
+                  ),
+                ),
               ],
             ),
             
@@ -186,6 +196,21 @@ class OverviewTab extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Uploading ${result.files.length} file(s)...'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _generateQuiz(BuildContext context, WidgetRef ref) async {
+    final quiz = await GenerateQuizSheet.show(context, project.id);
+    if (quiz != null) {
+      ref.read(quizListNotifierProvider(project.id)).addQuiz(quiz);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Quiz generated! Go to the Quizzes tab to take it.'),
             behavior: SnackBarBehavior.floating,
           ),
         );

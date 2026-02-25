@@ -10,6 +10,7 @@ import '../widgets/widgets.dart';
 import 'tabs/overview_tab.dart';
 import 'tabs/documents_tab.dart';
 import 'tabs/conversations_tab.dart';
+import '../../../quizzes/presentation/screens/quizzes_tab.dart';
 
 /// Project detail screen with tabs.
 /// 
@@ -36,7 +37,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -282,6 +283,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
                         icon: Icon(LucideIcons.messageSquare, size: 18),
                         text: 'Chats',
                       ),
+                      Tab(
+                        icon: Icon(LucideIcons.brainCircuit, size: 18),
+                        text: 'Quizzes',
+                      ),
                     ],
                   ),
                 ),
@@ -295,6 +300,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen>
             OverviewTab(project: project),
             DocumentsTab(projectId: widget.projectId),
             ConversationsTab(projectId: widget.projectId),
+            QuizzesTab(projectId: widget.projectId),
           ],
         ),
       ),

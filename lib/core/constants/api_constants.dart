@@ -16,6 +16,7 @@ class ApiConstants {
   //
   // This works regardless of WiFi network!
   static const String baseUrl = 'http://localhost:8000';
+  // static const String baseUrl = 'https://ai-tutor-api-vruq.onrender.com';
 
   // API version prefix
   static const String apiPrefix = '/api/v1';
@@ -209,6 +210,70 @@ class ApiConstants {
   /// Response: ConversationForkResponse
   static String forkConversation(String conversationId) => 
       '$apiBaseUrl/conversations/$conversationId/fork';
+
+  // ============================================================
+  // Topic Endpoints
+  // ============================================================
+
+  /// POST - Extract topics from project documents
+  /// Request: { force_refresh? }
+  /// Response: TopicListResponse
+  static String extractTopics(String projectId) =>
+      '$apiBaseUrl/projects/$projectId/topics/extract';
+
+  /// GET - List topics for a project
+  /// Response: TopicListResponse
+  static String topics(String projectId) =>
+      '$apiBaseUrl/projects/$projectId/topics';
+
+  // ============================================================
+  // Knowledge & Progress Endpoints
+  // ============================================================
+
+  /// GET - Get knowledge state for a project
+  /// Response: ProjectKnowledgeResponse
+  static String projectKnowledge(String projectId) =>
+      '$apiBaseUrl/projects/$projectId/knowledge';
+
+  /// GET - Get overall user progress stats
+  /// Response: ProgressStats
+  static String get progressStats => '$apiBaseUrl/progress/stats';
+
+  // ============================================================
+  // Quiz Endpoints
+  // ============================================================
+
+  /// POST - Generate a quiz from project documents
+  /// Request: { num_questions, difficulty, question_types, topic_focus?, title? }
+  /// Response: QuizDetailResponse
+  static String generateQuiz(String projectId) =>
+      '$apiBaseUrl/projects/$projectId/quizzes/generate';
+
+  /// GET - List quizzes for a project
+  /// Query: skip, limit
+  /// Response: QuizListResponse
+  static String quizzes(String projectId) =>
+      '$apiBaseUrl/projects/$projectId/quizzes';
+
+  /// GET - Get quiz with questions (for taking)
+  /// Response: QuizDetailResponse
+  static String quiz(String quizId) => '$apiBaseUrl/quizzes/$quizId';
+
+  /// POST - Submit quiz answers
+  /// Request: { answers: [...], time_taken_seconds? }
+  /// Response: QuizResultDetailResponse
+  static String submitQuiz(String quizId) =>
+      '$apiBaseUrl/quizzes/$quizId/submit';
+
+  /// GET - List user's attempts for a quiz
+  /// Response: AttemptListResponse
+  static String quizAttempts(String quizId) =>
+      '$apiBaseUrl/quizzes/$quizId/attempts';
+
+  /// GET - Get detailed attempt results
+  /// Response: QuizResultDetailResponse
+  static String attemptResult(String attemptId) =>
+      '$apiBaseUrl/quizzes/attempts/$attemptId';
 
   // ============================================================
   // WebSocket Endpoints
