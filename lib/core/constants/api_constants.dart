@@ -18,6 +18,12 @@ class ApiConstants {
   static String get apiBaseUrl => '$baseUrl$apiPrefix';
 
   // ============================================================
+  // Google OAuth
+  // ============================================================
+  static const String googleServerClientId =
+      '1033037941907-mqe2b1qf4qmtk9mec669c63ecj0mr3gr.apps.googleusercontent.com';
+
+  // ============================================================
   // Auth Endpoints
   // ============================================================
 
@@ -231,6 +237,39 @@ class ApiConstants {
   /// GET - Get overall user progress stats
   /// Response: ProgressStats
   static String get progressStats => '$apiBaseUrl/progress/stats';
+
+  /// GET - Get recent quiz attempts with scores
+  /// Query: limit
+  /// Response: List of quiz history items
+  static String get quizHistory => '$apiBaseUrl/progress/quiz-history';
+
+  /// PATCH - Update user profile
+  /// Request: { full_name?, default_socratic_mode? }
+  /// Response: UserResponse
+  static String get updateProfile => '$apiBaseUrl/auth/me';
+
+  /// POST - Change password
+  /// Request: { current_password, new_password }
+  /// Response: MessageResponse
+  static String get changePassword => '$apiBaseUrl/auth/change-password';
+
+  /// POST - Save FCM token
+  /// Request: { fcm_token }
+  /// Response: MessageResponse
+  static String get fcmToken => '$apiBaseUrl/auth/fcm-token';
+
+  /// GET/PATCH - Notification preferences
+  static String get notificationPreferences =>
+      '$apiBaseUrl/auth/notification-preferences';
+
+  /// GET - List notifications
+  /// GET /unread-count - Unread count
+  /// POST /mark-all-read - Mark all as read
+  static String get notificationsEndpoint => '$apiBaseUrl/notifications';
+
+  /// GET - Unread notification count
+  static String get notificationsUnreadCount =>
+      '$apiBaseUrl/notifications/unread-count';
 
   // ============================================================
   // Quiz Endpoints

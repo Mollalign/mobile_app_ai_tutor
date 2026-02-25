@@ -38,4 +38,12 @@ class KnowledgeRemoteDataSource {
     final response = await _apiClient.get(ApiConstants.progressStats);
     return response.data as Map<String, dynamic>;
   }
+
+  /// GET /progress/quiz-history
+  Future<List<dynamic>> getQuizHistory({int limit = 20}) async {
+    final response = await _apiClient.get(
+      '${ApiConstants.quizHistory}?limit=$limit',
+    );
+    return response.data as List<dynamic>;
+  }
 }

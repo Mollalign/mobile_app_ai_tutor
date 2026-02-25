@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/auth/domain/usecases/usecase.dart';
 
+import '../../../../core/services/notification_service.dart';
+import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
 import 'auth_providers.dart';
 
@@ -18,6 +20,7 @@ class AuthNotifier extends Notifier<AuthState> {
   late final GetCurrentUserUseCase _getCurrentUserUseCase;
   late final CheckAuthStatusUseCase _checkAuthStatusUseCase;
   late final GoogleSignInUseCase _googleSignInUseCase;
+  late final AuthRepository _repository;
 
   @override
   AuthState build() {
@@ -27,6 +30,7 @@ class AuthNotifier extends Notifier<AuthState> {
     _getCurrentUserUseCase = ref.watch(getCurrentUserUseCaseProvider);
     _checkAuthStatusUseCase = ref.watch(checkAuthStatusUseCaseProvider);
     _googleSignInUseCase = ref.watch(googleSignInUseCaseProvider);
+    _repository = ref.watch(authRepositoryProvider);
 
     // Start by checking auth status
     _checkAuthStatus();
@@ -58,6 +62,7 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       state = AuthState.authenticated(user: result.user);
+      _registerFcmToken();
     } catch (e) {
       state = AuthState.error(message: _getErrorMessage(e));
     }
@@ -79,6 +84,7 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       state = AuthState.authenticated(user: result.user);
+      _registerFcmToken();
     } catch (e) {
       state = AuthState.error(message: _getErrorMessage(e));
     }
@@ -104,6 +110,7 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final result = await _googleSignInUseCase();
       state = AuthState.authenticated(user: result.user);
+      _registerFcmToken();
     } catch (e) {
       final msg = _getErrorMessage(e);
       if (msg.contains('cancelled')) {
@@ -112,6 +119,31 @@ class AuthNotifier extends Notifier<AuthState> {
         state = AuthState.error(message: msg);
       }
     }
+  }
+
+  /// Update the current user's profile and refresh auth state.
+  Future<void> updateProfile({
+    String? fullName,
+    bool? defaultSocraticMode,
+    String? avatarColor,
+  }) async {
+    final updatedUser = await _repository.updateProfile(
+      fullName: fullName,
+      defaultSocraticMode: defaultSocraticMode,
+      avatarColor: avatarColor,
+    );
+    state = AuthState.authenticated(user: updatedUser);
+  }
+
+  /// Change the current user's password.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _repository.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
   }
 
   /// Clear error and go back to unauthenticated state.
@@ -132,6 +164,7 @@ class AuthNotifier extends Notifier<AuthState> {
         final user = await _getCurrentUserUseCase();
         if (user != null) {
           state = AuthState.authenticated(user: user);
+          _registerFcmToken();
         } else {
           state = const AuthState.unauthenticated();
         }
@@ -141,6 +174,10 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (e) {
       state = const AuthState.unauthenticated();
     }
+  }
+
+  void _registerFcmToken() {
+    Future.microtask(() => NotificationService().registerToken());
   }
 
   /// Extract user-friendly error message.

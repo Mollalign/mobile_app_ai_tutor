@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/google_sign_in_button.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
@@ -212,7 +213,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Google Sign-In button
-                  _GoogleSignInButton(
+                  GoogleSignInButton(
                     onPressed: isLoading
                         ? null
                         : () => ref.read(authNotifierProvider.notifier).googleSignIn(),
@@ -245,97 +246,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
   }
-}
-
-class _GoogleSignInButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-
-  const _GoogleSignInButton({this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        side: BorderSide(color: colorScheme.outlineVariant),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CustomPaint(painter: _GoogleLogoPainter()),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Continue with Google',
-            style: textTheme.labelLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-    final center = Offset(w / 2, h / 2);
-    final radius = w / 2;
-    const strokeWidth = 3.0;
-
-    final bluePaint = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
-
-    final greenPaint = Paint()
-      ..color = const Color(0xFF34A853)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
-
-    final yellowPaint = Paint()
-      ..color = const Color(0xFFFBBC05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
-
-    final redPaint = Paint()
-      ..color = const Color(0xFFEA4335)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
-
-    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
-
-    canvas.drawArc(rect, -0.4, 1.2, false, bluePaint);
-    canvas.drawArc(rect, 0.8, 1.0, false, greenPaint);
-    canvas.drawArc(rect, 1.8, 0.9, false, yellowPaint);
-    canvas.drawArc(rect, 2.7, 1.2, false, redPaint);
-
-    final barPaint = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTRB(w * 0.5, h * 0.4, w * 0.95, h * 0.6),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

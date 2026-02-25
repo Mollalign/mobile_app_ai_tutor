@@ -6,6 +6,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../app/theme_provider.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../../../auth/presentation/providers/providers.dart';
 import '../../../conversations/presentation/providers/providers.dart';
@@ -68,6 +70,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
               ),
               actions: [
+                const _NotificationBellButton(),
                 _ThemeToggleButton(),
                 const SizedBox(width: 8),
               ],
@@ -779,6 +782,86 @@ class _ConversationTile extends StatelessWidget {
 }
 
 /// Theme toggle button with smooth animation.
+class _NotificationBellButton extends StatefulWidget {
+  const _NotificationBellButton();
+
+  @override
+  State<_NotificationBellButton> createState() =>
+      _NotificationBellButtonState();
+}
+
+class _NotificationBellButtonState extends State<_NotificationBellButton> {
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnreadCount();
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    try {
+      final client = ApiClient();
+      final response = await client.get(ApiConstants.notificationsUnreadCount);
+      final data = response.data as Map<String, dynamic>;
+      if (mounted) {
+        setState(() => _unreadCount = data['unread_count'] as int? ?? 0);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Stack(
+      children: [
+        IconButton(
+          onPressed: () async {
+            await context.push(AppRoutes.notifications);
+            _fetchUnreadCount();
+          },
+          icon: Icon(
+            LucideIcons.bell,
+            color: colorScheme.onSurfaceVariant,
+            size: 22,
+          ),
+          tooltip: 'Notifications',
+          style: IconButton.styleFrom(
+            backgroundColor: colorScheme.surfaceContainerHighest.withAlpha(180),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        if (_unreadCount > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: colorScheme.error,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              child: Center(
+                child: Text(
+                  _unreadCount > 9 ? '9+' : '$_unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _ThemeToggleButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -859,15 +942,59 @@ class _LearningProgressSection extends ConsumerWidget {
         final textTheme = Theme.of(context).textTheme;
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
+        final streak = stats['study_streak'] as int? ?? 0;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Learning Progress',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Learning Progress',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.progress),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View All',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(LucideIcons.arrowRight, size: 16, color: colorScheme.primary),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            if (streak > 0) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(LucideIcons.flame, size: 16, color: Colors.orange),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$streak day streak!',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),

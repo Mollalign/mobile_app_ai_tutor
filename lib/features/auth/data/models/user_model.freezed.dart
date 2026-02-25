@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$UserModel {
 
  String get id; String get email;// Correct placement: @JsonKey goes before 'required'
-@JsonKey(name: 'full_name') String get fullName;@JsonKey(name: 'avatar_url') String? get avatarUrl;@JsonKey(name: 'is_active') bool get isActive;@JsonKey(name: 'default_socratic_mode') bool get defaultSocraticMode;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'last_login') DateTime? get lastLogin;
+@JsonKey(name: 'full_name') String get fullName;@JsonKey(name: 'avatar_url') String? get avatarUrl;@JsonKey(name: 'avatar_color') String? get avatarColor;@JsonKey(name: 'is_active') bool get isActive;@JsonKey(name: 'default_socratic_mode') bool get defaultSocraticMode;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'last_login') DateTime? get lastLogin;
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $UserModelCopyWith<UserModel> get copyWith => _$UserModelCopyWithImpl<UserModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.avatarColor, avatarColor) || other.avatarColor == avatarColor)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,isActive,defaultSocraticMode,createdAt,lastLogin);
+int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,avatarColor,isActive,defaultSocraticMode,createdAt,lastLogin);
 
 @override
 String toString() {
-  return 'UserModel(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
+  return 'UserModel(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, avatarColor: $avatarColor, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $UserModelCopyWith<$Res>  {
   factory $UserModelCopyWith(UserModel value, $Res Function(UserModel) _then) = _$UserModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String email,@JsonKey(name: 'full_name') String fullName,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'default_socratic_mode') bool defaultSocraticMode,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'last_login') DateTime? lastLogin
+ String id, String email,@JsonKey(name: 'full_name') String fullName,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'avatar_color') String? avatarColor,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'default_socratic_mode') bool defaultSocraticMode,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'last_login') DateTime? lastLogin
 });
 
 
@@ -66,12 +66,13 @@ class _$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? avatarColor = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,fullName: null == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
 as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,avatarColor: freezed == avatarColor ? _self.avatarColor : avatarColor // ignore: cast_nullable_to_non_nullable
 as String?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,defaultSocraticMode: null == defaultSocraticMode ? _self.defaultSocraticMode : defaultSocraticMode // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email, @JsonKey(name: 'full_name')  String fullName, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'default_socratic_mode')  bool defaultSocraticMode, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'last_login')  DateTime? lastLogin)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email, @JsonKey(name: 'full_name')  String fullName, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'avatar_color')  String? avatarColor, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'default_socratic_mode')  bool defaultSocraticMode, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'last_login')  DateTime? lastLogin)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
-return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.avatarColor,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email, @JsonKey(name: 'full_name')  String fullName, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'default_socratic_mode')  bool defaultSocraticMode, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'last_login')  DateTime? lastLogin)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email, @JsonKey(name: 'full_name')  String fullName, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'avatar_color')  String? avatarColor, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'default_socratic_mode')  bool defaultSocraticMode, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'last_login')  DateTime? lastLogin)  $default,) {final _that = this;
 switch (_that) {
 case _UserModel():
-return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.avatarColor,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email, @JsonKey(name: 'full_name')  String fullName, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'default_socratic_mode')  bool defaultSocraticMode, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'last_login')  DateTime? lastLogin)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email, @JsonKey(name: 'full_name')  String fullName, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'avatar_color')  String? avatarColor, @JsonKey(name: 'is_active')  bool isActive, @JsonKey(name: 'default_socratic_mode')  bool defaultSocraticMode, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'last_login')  DateTime? lastLogin)?  $default,) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
-return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.avatarColor,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActi
 @JsonSerializable()
 
 class _UserModel implements UserModel {
-  const _UserModel({required this.id, required this.email, @JsonKey(name: 'full_name') required this.fullName, @JsonKey(name: 'avatar_url') this.avatarUrl, @JsonKey(name: 'is_active') required this.isActive, @JsonKey(name: 'default_socratic_mode') required this.defaultSocraticMode, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'last_login') this.lastLogin});
+  const _UserModel({required this.id, required this.email, @JsonKey(name: 'full_name') required this.fullName, @JsonKey(name: 'avatar_url') this.avatarUrl, @JsonKey(name: 'avatar_color') this.avatarColor, @JsonKey(name: 'is_active') required this.isActive, @JsonKey(name: 'default_socratic_mode') required this.defaultSocraticMode, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'last_login') this.lastLogin});
   factory _UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
 @override final  String id;
@@ -225,6 +226,7 @@ class _UserModel implements UserModel {
 // Correct placement: @JsonKey goes before 'required'
 @override@JsonKey(name: 'full_name') final  String fullName;
 @override@JsonKey(name: 'avatar_url') final  String? avatarUrl;
+@override@JsonKey(name: 'avatar_color') final  String? avatarColor;
 @override@JsonKey(name: 'is_active') final  bool isActive;
 @override@JsonKey(name: 'default_socratic_mode') final  bool defaultSocraticMode;
 @override@JsonKey(name: 'created_at') final  DateTime createdAt;
@@ -243,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.avatarColor, avatarColor) || other.avatarColor == avatarColor)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,isActive,defaultSocraticMode,createdAt,lastLogin);
+int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,avatarColor,isActive,defaultSocraticMode,createdAt,lastLogin);
 
 @override
 String toString() {
-  return 'UserModel(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
+  return 'UserModel(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, avatarColor: $avatarColor, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$UserModelCopyWith<$Res> implements $UserModelCopyWith<$Re
   factory _$UserModelCopyWith(_UserModel value, $Res Function(_UserModel) _then) = __$UserModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String email,@JsonKey(name: 'full_name') String fullName,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'default_socratic_mode') bool defaultSocraticMode,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'last_login') DateTime? lastLogin
+ String id, String email,@JsonKey(name: 'full_name') String fullName,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'avatar_color') String? avatarColor,@JsonKey(name: 'is_active') bool isActive,@JsonKey(name: 'default_socratic_mode') bool defaultSocraticMode,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'last_login') DateTime? lastLogin
 });
 
 
@@ -280,12 +282,13 @@ class __$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? avatarColor = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
   return _then(_UserModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,fullName: null == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
 as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,avatarColor: freezed == avatarColor ? _self.avatarColor : avatarColor // ignore: cast_nullable_to_non_nullable
 as String?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,defaultSocraticMode: null == defaultSocraticMode ? _self.defaultSocraticMode : defaultSocraticMode // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

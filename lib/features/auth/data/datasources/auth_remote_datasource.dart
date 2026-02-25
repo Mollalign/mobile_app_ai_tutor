@@ -49,6 +49,15 @@ abstract class AuthRemoteDataSource {
 
   /// POST /auth/google
   Future<TokenModel> googleAuth({required String idToken});
+
+  /// PATCH /auth/me
+  Future<UserModel> updateProfile({String? fullName, bool? defaultSocraticMode, String? avatarColor});
+
+  /// POST /auth/change-password
+  Future<MessageResponseModel> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }
 
 /// Implementation of [AuthRemoteDataSource].
@@ -163,5 +172,35 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     );
 
     return TokenModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  @override
+  Future<UserModel> updateProfile({
+    String? fullName,
+    bool? defaultSocraticMode,
+    String? avatarColor,
+  }) async {
+    final data = <String, dynamic>{};
+    if (fullName != null) data['full_name'] = fullName;
+    if (defaultSocraticMode != null) data['default_socratic_mode'] = defaultSocraticMode;
+    if (avatarColor != null) data['avatar_color'] = avatarColor;
+
+    final response = await _apiClient.patch('/auth/me', data: data);
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  @override
+  Future<MessageResponseModel> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _apiClient.post(
+      '/auth/change-password',
+      data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+    return MessageResponseModel.fromJson(response.data as Map<String, dynamic>);
   }
 }

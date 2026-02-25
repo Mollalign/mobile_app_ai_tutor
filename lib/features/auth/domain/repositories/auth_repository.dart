@@ -78,4 +78,13 @@ abstract class AuthRepository {
   /// Handles the Google SDK flow and backend token exchange.
   /// Returns [User] and [AuthTokens] on success.
   Future<({User user, AuthTokens tokens})> googleSignIn();
+
+  /// Update user profile fields.
+  Future<User> updateProfile({String? fullName, bool? defaultSocraticMode, String? avatarColor});
+
+  /// Change user password (email-auth users only).
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

@@ -7,6 +7,8 @@ import '../features/auth/presentation/screens/screens.dart';
 import '../features/conversations/presentation/screens/screens.dart';
 import '../features/dashboard/presentation/screens/screens.dart';
 import '../features/projects/presentation/screens/screens.dart';
+import '../features/notifications/presentation/screens/notifications_screen.dart';
+import '../features/progress/presentation/screens/progress_screen.dart';
 import '../features/sharing/presentation/screens/screens.dart';
 
 /// Fade-through page transition for top-level routes.
@@ -82,6 +84,12 @@ class AppRoutes {
   static const String conversations = '/conversations';
   static const String chat = '/conversations/:id';
   
+  // Progress route
+  static const String progress = '/progress';
+
+  // Notifications route
+  static const String notifications = '/notifications';
+
   // Sharing routes
   static const String myShares = '/my-shares';
   static const String sharedConversationPath = '/shared/:token';
@@ -229,6 +237,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       
+      // Progress Route
+      GoRoute(
+        path: AppRoutes.progress,
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const ProgressScreen(),
+        ),
+      ),
+
+      // Notifications Route
+      GoRoute(
+        path: AppRoutes.notifications,
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const NotificationsScreen(),
+        ),
+      ),
+
       // Sharing Routes
       GoRoute(
         path: AppRoutes.myShares,

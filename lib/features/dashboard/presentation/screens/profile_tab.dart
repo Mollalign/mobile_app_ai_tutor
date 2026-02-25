@@ -6,7 +6,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../app/router.dart';
 import '../../../../app/theme_provider.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/providers/providers.dart';
 
 /// Profile tab - shows user settings and account info.
@@ -15,6 +17,14 @@ import '../../../auth/presentation/providers/providers.dart';
 /// - User info display
 /// - Settings options
 /// - Logout
+Color _avatarBgColor(String? hex, ColorScheme cs) {
+  if (hex != null && hex.length == 7) {
+    final value = int.tryParse(hex.substring(1), radix: 16);
+    if (value != null) return Color(0xFF000000 | value);
+  }
+  return Colors.white.withAlpha(38);
+}
+
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
 
@@ -66,7 +76,7 @@ class ProfileTab extends ConsumerWidget {
                           width: 76,
                           height: 76,
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(38),
+                            color: _avatarBgColor(user?.avatarColor, colorScheme),
                             borderRadius: BorderRadius.circular(22),
                             border: Border.all(
                               color: Colors.white.withAlpha(77),
@@ -143,12 +153,10 @@ class ProfileTab extends ConsumerWidget {
 
           _buildSettingsTile(
             context,
-            icon: LucideIcons.brain,
-            title: 'Learning Preferences',
-            subtitle: 'Socratic mode, difficulty level',
-            onTap: () {
-              // TODO: Learning preferences
-            },
+            icon: LucideIcons.userCog,
+            title: 'Edit Profile',
+            subtitle: 'Name, learning preferences',
+            onTap: () => _showEditProfileSheet(context, ref, user),
           ),
 
           _buildSettingsTile(
@@ -156,9 +164,7 @@ class ProfileTab extends ConsumerWidget {
             icon: LucideIcons.bell,
             title: 'Notifications',
             subtitle: 'Reminders and alerts',
-            onTap: () {
-              // TODO: Notifications settings
-            },
+            onTap: () => _showNotificationPreferencesSheet(context),
           ),
 
           _buildThemeTile(context, ref),
@@ -167,10 +173,8 @@ class ProfileTab extends ConsumerWidget {
             context,
             icon: LucideIcons.shield,
             title: 'Privacy & Security',
-            subtitle: 'Password, data',
-            onTap: () {
-              // TODO: Privacy settings
-            },
+            subtitle: 'Change password',
+            onTap: () => _showChangePasswordSheet(context, ref),
           ),
 
           const SizedBox(height: AppSpacing.xl),
@@ -376,6 +380,49 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
+  void _showEditProfileSheet(BuildContext context, WidgetRef ref, dynamic user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _EditProfileSheet(
+        currentName: user?.fullName ?? '',
+        currentSocraticMode: user?.defaultSocraticMode ?? false,
+        currentAvatarColor: user?.avatarColor,
+        initials: user?.initials ?? '?',
+        onSave: (name, socratic, avatarColor) async {
+          await ref.read(authNotifierProvider.notifier).updateProfile(
+                fullName: name,
+                defaultSocraticMode: socratic,
+                avatarColor: avatarColor,
+              );
+        },
+      ),
+    );
+  }
+
+  void _showNotificationPreferencesSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => const _NotificationPreferencesSheet(),
+    );
+  }
+
+  void _showChangePasswordSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _ChangePasswordSheet(
+        onSave: (current, newPw) async {
+          await ref.read(authNotifierProvider.notifier).changePassword(
+                currentPassword: current,
+                newPassword: newPw,
+              );
+        },
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -537,6 +584,593 @@ class _ThemeModeSelector extends StatelessWidget {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Edit Profile Sheet
+// ============================================================
+
+class _EditProfileSheet extends StatefulWidget {
+  final String currentName;
+  final bool currentSocraticMode;
+  final String? currentAvatarColor;
+  final String initials;
+  final Future<void> Function(String name, bool socratic, String? avatarColor) onSave;
+
+  const _EditProfileSheet({
+    required this.currentName,
+    required this.currentSocraticMode,
+    required this.initials,
+    required this.onSave,
+    this.currentAvatarColor,
+  });
+
+  static const _presetColors = [
+    '#4CAF50', '#2196F3', '#9C27B0', '#FF9800',
+    '#E91E63', '#00BCD4', '#FF5722', '#607D8B',
+    '#3F51B5', '#795548',
+  ];
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _nameController;
+  late bool _socraticMode;
+  late String? _selectedColor;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.currentName);
+    _socraticMode = widget.currentSocraticMode;
+    _selectedColor = widget.currentAvatarColor;
+  }
+
+  Color? _parseColor(String? hex) {
+    if (hex == null || hex.length != 7) return null;
+    final value = int.tryParse(hex.substring(1), radix: 16);
+    if (value == null) return null;
+    return Color(0xFF000000 | value);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameController.text.trim();
+    if (name.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Name must be at least 2 characters')),
+      );
+      return;
+    }
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave(name, _socraticMode, _selectedColor);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Edit Profile',
+            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _parseColor(_selectedColor) ?? colorScheme.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Text(
+                  widget.initials,
+                  style: textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Avatar Color',
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _EditProfileSheet._presetColors.map((hex) {
+              final isSelected = _selectedColor == hex;
+              final color = _parseColor(hex) ?? colorScheme.primary;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedColor = hex),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(color: colorScheme.onSurface, width: 3)
+                        : null,
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: color.withAlpha(100), blurRadius: 8)]
+                        : null,
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, color: Colors.white, size: 18)
+                      : null,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Full Name',
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              hintText: 'Enter your full name',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              prefixIcon: const Icon(LucideIcons.user),
+            ),
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'Socratic Mode',
+              style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+            ),
+            subtitle: Text(
+              'AI guides you with questions rather than direct answers',
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            value: _socraticMode,
+            onChanged: (v) => setState(() => _socraticMode = v),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save Changes'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Change Password Sheet
+// ============================================================
+
+class _ChangePasswordSheet extends StatefulWidget {
+  final Future<void> Function(String current, String newPw) onSave;
+
+  const _ChangePasswordSheet({required this.onSave});
+
+  @override
+  State<_ChangePasswordSheet> createState() => _ChangePasswordSheetState();
+}
+
+class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
+  final _currentController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _isSaving = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final current = _currentController.text;
+    final newPw = _newController.text;
+    final confirm = _confirmController.text;
+
+    if (current.isEmpty || newPw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All fields are required')),
+      );
+      return;
+    }
+    if (newPw.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('New password must be at least 8 characters')),
+      );
+      return;
+    }
+    if (newPw != confirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave(current, newPw);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password changed successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String message = 'Failed to change password';
+        final eStr = e.toString();
+        if (eStr.contains('incorrect')) {
+          message = 'Current password is incorrect';
+        } else if (eStr.contains('Google')) {
+          message = 'This account uses Google Sign-In and has no password';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Change Password',
+            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _currentController,
+            obscureText: _obscureCurrent,
+            decoration: InputDecoration(
+              labelText: 'Current Password',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              prefixIcon: const Icon(LucideIcons.lock),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureCurrent ? LucideIcons.eyeOff : LucideIcons.eye),
+                onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _newController,
+            obscureText: _obscureNew,
+            decoration: InputDecoration(
+              labelText: 'New Password',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              prefixIcon: const Icon(LucideIcons.keyRound),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureNew ? LucideIcons.eyeOff : LucideIcons.eye),
+                onPressed: () => setState(() => _obscureNew = !_obscureNew),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _confirmController,
+            obscureText: _obscureConfirm,
+            decoration: InputDecoration(
+              labelText: 'Confirm New Password',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              prefixIcon: const Icon(LucideIcons.keyRound),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureConfirm ? LucideIcons.eyeOff : LucideIcons.eye),
+                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+              ),
+            ),
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Change Password'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Notification Preferences Sheet
+// ============================================================
+
+class _NotificationPreferencesSheet extends StatefulWidget {
+  const _NotificationPreferencesSheet();
+
+  @override
+  State<_NotificationPreferencesSheet> createState() =>
+      _NotificationPreferencesSheetState();
+}
+
+class _NotificationPreferencesSheetState
+    extends State<_NotificationPreferencesSheet> {
+  bool _studyReminders = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 9, minute: 0);
+  bool _quizResults = true;
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    try {
+      final client = ApiClient();
+      final response = await client.get(ApiConstants.notificationPreferences);
+      final data = response.data as Map<String, dynamic>;
+      if (!mounted) return;
+      setState(() {
+        _studyReminders = data['study_reminders_enabled'] ?? false;
+        _quizResults = data['quiz_results_enabled'] ?? true;
+        final timeStr = data['reminder_time'] as String?;
+        if (timeStr != null && timeStr.contains(':')) {
+          final parts = timeStr.split(':');
+          _reminderTime = TimeOfDay(
+            hour: int.parse(parts[0]),
+            minute: int.parse(parts[1]),
+          );
+        }
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _savePreferences() async {
+    setState(() => _isSaving = true);
+    try {
+      final client = ApiClient();
+      await client.patch(
+        ApiConstants.notificationPreferences,
+        data: {
+          'study_reminders_enabled': _studyReminders,
+          'reminder_time':
+              '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}',
+          'quiz_results_enabled': _quizResults,
+        },
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notification preferences saved')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Notification Preferences',
+            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 20),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Study Reminders',
+                style:
+                    textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text(
+                'Daily reminder to keep up your streak',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              value: _studyReminders,
+              onChanged: (v) => setState(() => _studyReminders = v),
+            ),
+            if (_studyReminders) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(LucideIcons.clock, color: colorScheme.primary),
+                title: const Text('Reminder Time'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: _reminderTime,
+                    );
+                    if (picked != null) {
+                      setState(() => _reminderTime = picked);
+                    }
+                  },
+                  child: Text(_reminderTime.format(context)),
+                ),
+              ),
+            ],
+            const Divider(),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Quiz Results',
+                style:
+                    textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text(
+                'Get notified when quiz results are ready',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              value: _quizResults,
+              onChanged: (v) => setState(() => _quizResults = v),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _isSaving ? null : _savePreferences,
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save Preferences'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

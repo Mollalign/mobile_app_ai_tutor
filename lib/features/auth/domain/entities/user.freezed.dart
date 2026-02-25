@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$User {
 
- String get id; String get email; String get fullName; String? get avatarUrl; bool get isActive; bool get defaultSocraticMode; DateTime get createdAt; DateTime? get lastLogin;
+ String get id; String get email; String get fullName; String? get avatarUrl; String? get avatarColor; bool get isActive; bool get defaultSocraticMode; DateTime get createdAt; DateTime? get lastLogin;
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $UserCopyWith<User> get copyWith => _$UserCopyWithImpl<User>(this as User, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is User&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is User&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.avatarColor, avatarColor) || other.avatarColor == avatarColor)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,isActive,defaultSocraticMode,createdAt,lastLogin);
+int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,avatarColor,isActive,defaultSocraticMode,createdAt,lastLogin);
 
 @override
 String toString() {
-  return 'User(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
+  return 'User(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, avatarColor: $avatarColor, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $UserCopyWith<$Res>  {
   factory $UserCopyWith(User value, $Res Function(User) _then) = _$UserCopyWithImpl;
 @useResult
 $Res call({
- String id, String email, String fullName, String? avatarUrl, bool isActive, bool defaultSocraticMode, DateTime createdAt, DateTime? lastLogin
+ String id, String email, String fullName, String? avatarUrl, String? avatarColor, bool isActive, bool defaultSocraticMode, DateTime createdAt, DateTime? lastLogin
 });
 
 
@@ -62,12 +62,13 @@ class _$UserCopyWithImpl<$Res>
 
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? avatarColor = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,fullName: null == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
 as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,avatarColor: freezed == avatarColor ? _self.avatarColor : avatarColor // ignore: cast_nullable_to_non_nullable
 as String?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,defaultSocraticMode: null == defaultSocraticMode ? _self.defaultSocraticMode : defaultSocraticMode // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -157,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String? avatarUrl,  bool isActive,  bool defaultSocraticMode,  DateTime createdAt,  DateTime? lastLogin)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String? avatarUrl,  String? avatarColor,  bool isActive,  bool defaultSocraticMode,  DateTime createdAt,  DateTime? lastLogin)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _User() when $default != null:
-return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.avatarColor,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
   return orElse();
 
 }
@@ -178,10 +179,10 @@ return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String? avatarUrl,  bool isActive,  bool defaultSocraticMode,  DateTime createdAt,  DateTime? lastLogin)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String? avatarUrl,  String? avatarColor,  bool isActive,  bool defaultSocraticMode,  DateTime createdAt,  DateTime? lastLogin)  $default,) {final _that = this;
 switch (_that) {
 case _User():
-return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.avatarColor,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +199,10 @@ return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String fullName,  String? avatarUrl,  bool isActive,  bool defaultSocraticMode,  DateTime createdAt,  DateTime? lastLogin)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String fullName,  String? avatarUrl,  String? avatarColor,  bool isActive,  bool defaultSocraticMode,  DateTime createdAt,  DateTime? lastLogin)?  $default,) {final _that = this;
 switch (_that) {
 case _User() when $default != null:
-return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.avatarColor,_that.isActive,_that.defaultSocraticMode,_that.createdAt,_that.lastLogin);case _:
   return null;
 
 }
@@ -213,13 +214,14 @@ return $default(_that.id,_that.email,_that.fullName,_that.avatarUrl,_that.isActi
 
 
 class _User extends User {
-  const _User({required this.id, required this.email, required this.fullName, this.avatarUrl, required this.isActive, required this.defaultSocraticMode, required this.createdAt, this.lastLogin}): super._();
+  const _User({required this.id, required this.email, required this.fullName, this.avatarUrl, this.avatarColor, required this.isActive, required this.defaultSocraticMode, required this.createdAt, this.lastLogin}): super._();
   
 
 @override final  String id;
 @override final  String email;
 @override final  String fullName;
 @override final  String? avatarUrl;
+@override final  String? avatarColor;
 @override final  bool isActive;
 @override final  bool defaultSocraticMode;
 @override final  DateTime createdAt;
@@ -235,16 +237,16 @@ _$UserCopyWith<_User> get copyWith => __$UserCopyWithImpl<_User>(this, _$identit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _User&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _User&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.avatarColor, avatarColor) || other.avatarColor == avatarColor)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.defaultSocraticMode, defaultSocraticMode) || other.defaultSocraticMode == defaultSocraticMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLogin, lastLogin) || other.lastLogin == lastLogin));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,isActive,defaultSocraticMode,createdAt,lastLogin);
+int get hashCode => Object.hash(runtimeType,id,email,fullName,avatarUrl,avatarColor,isActive,defaultSocraticMode,createdAt,lastLogin);
 
 @override
 String toString() {
-  return 'User(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
+  return 'User(id: $id, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, avatarColor: $avatarColor, isActive: $isActive, defaultSocraticMode: $defaultSocraticMode, createdAt: $createdAt, lastLogin: $lastLogin)';
 }
 
 
@@ -255,7 +257,7 @@ abstract mixin class _$UserCopyWith<$Res> implements $UserCopyWith<$Res> {
   factory _$UserCopyWith(_User value, $Res Function(_User) _then) = __$UserCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String email, String fullName, String? avatarUrl, bool isActive, bool defaultSocraticMode, DateTime createdAt, DateTime? lastLogin
+ String id, String email, String fullName, String? avatarUrl, String? avatarColor, bool isActive, bool defaultSocraticMode, DateTime createdAt, DateTime? lastLogin
 });
 
 
@@ -272,12 +274,13 @@ class __$UserCopyWithImpl<$Res>
 
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? avatarUrl = freezed,Object? avatarColor = freezed,Object? isActive = null,Object? defaultSocraticMode = null,Object? createdAt = null,Object? lastLogin = freezed,}) {
   return _then(_User(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,fullName: null == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
 as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,avatarColor: freezed == avatarColor ? _self.avatarColor : avatarColor // ignore: cast_nullable_to_non_nullable
 as String?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,defaultSocraticMode: null == defaultSocraticMode ? _self.defaultSocraticMode : defaultSocraticMode // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

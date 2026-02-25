@@ -15,6 +15,7 @@ abstract class User with _$User {
     required String email,
     required String fullName,
     String? avatarUrl,
+    String? avatarColor,
     required bool isActive,
     required bool defaultSocraticMode,
     required DateTime createdAt,

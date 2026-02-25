@@ -17,6 +17,8 @@ abstract class UserModel with _$UserModel {
     @JsonKey(name: 'full_name') required String fullName,
     
     @JsonKey(name: 'avatar_url') String? avatarUrl,
+
+    @JsonKey(name: 'avatar_color') String? avatarColor,
     
     @JsonKey(name: 'is_active') required bool isActive,
     

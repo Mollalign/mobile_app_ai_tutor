@@ -2,6 +2,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/features/auth/data/models/token_model.dart';
 import 'package:mobile/features/auth/data/models/user_model.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/storage/storage.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/repositories.dart';
@@ -226,7 +227,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<({User user, AuthTokens tokens})> googleSignIn() async {
     final gsi = GoogleSignIn.instance;
-    await gsi.initialize();
+    await gsi.initialize(
+      serverClientId: ApiConstants.googleServerClientId,
+    );
 
     final account = await gsi.authenticate();
 
@@ -243,6 +246,36 @@ class AuthRepositoryImpl implements AuthRepository {
     return (
       user: tokenModel.user.toEntity(),
       tokens: tokenModel.toEntity(),
+    );
+  }
+
+  // ============================================================
+  // Profile Management
+  // ============================================================
+
+  @override
+  Future<User> updateProfile({
+    String? fullName,
+    bool? defaultSocraticMode,
+    String? avatarColor,
+  }) async {
+    final userModel = await _remoteDataSource.updateProfile(
+      fullName: fullName,
+      defaultSocraticMode: defaultSocraticMode,
+      avatarColor: avatarColor,
+    );
+    await _storage.saveUserData(userModel.toJson());
+    return userModel.toEntity();
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _remoteDataSource.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
     );
   }
 
