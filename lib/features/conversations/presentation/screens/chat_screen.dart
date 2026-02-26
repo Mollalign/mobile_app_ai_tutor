@@ -698,9 +698,9 @@ class _EmptyChat extends StatelessWidget {
             ('Quiz me on this material', LucideIcons.brain),
           ]
         : [
-            ('Explain recursion simply', LucideIcons.repeat),
-            ('What is Big O notation?', LucideIcons.timer),
-            ('Stack vs Queue differences', LucideIcons.layers),
+            ('Help me understand a concept', LucideIcons.lightbulb),
+            ('Prepare me for an exam', LucideIcons.graduationCap),
+            ('Explain something step by step', LucideIcons.listChecks),
           ];
 
     return Center(

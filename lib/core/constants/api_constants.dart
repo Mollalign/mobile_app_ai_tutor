@@ -308,6 +308,32 @@ class ApiConstants {
       '$apiBaseUrl/quizzes/attempts/$attemptId';
 
   // ============================================================
+  // Smart Tutor Endpoints
+  // ============================================================
+
+  /// GET - Recommended quiz difficulty for a project
+  static String adaptiveDifficulty(String projectId) =>
+      '$apiBaseUrl/smart/adaptive-difficulty/$projectId';
+
+  /// GET - Smart topic suggestions based on knowledge gaps
+  static String get smartSuggestions => '$apiBaseUrl/smart/suggestions';
+
+  /// GET - AI-generated study plan for a project
+  static String studyPlan(String projectId) =>
+      '$apiBaseUrl/smart/study-plan/$projectId';
+
+  /// GET - Exam readiness score for a project
+  static String examReadiness(String projectId) =>
+      '$apiBaseUrl/smart/readiness/$projectId';
+
+  /// GET - Cross-topic connections for a project
+  static String crossConnections(String projectId) =>
+      '$apiBaseUrl/smart/connections/$projectId';
+
+  /// GET - Detect user's learning style
+  static String get learningStyle => '$apiBaseUrl/smart/learning-style';
+
+  // ============================================================
   // WebSocket Endpoints
   // ============================================================
   
