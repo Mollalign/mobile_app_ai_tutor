@@ -32,10 +32,6 @@ class AuthNotifier extends Notifier<AuthState> {
     _googleSignInUseCase = ref.watch(googleSignInUseCaseProvider);
     _repository = ref.watch(authRepositoryProvider);
 
-    // Start by checking auth status
-    _checkAuthStatus();
-
-    // Return initial state
     return const AuthState.initial();
   }
 

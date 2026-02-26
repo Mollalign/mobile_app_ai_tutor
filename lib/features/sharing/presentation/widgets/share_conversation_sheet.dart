@@ -61,7 +61,7 @@ class _ShareConversationSheetState extends ConsumerState<ShareConversationSheet>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create share: $e'),
+            content: const Text('Failed to create share link. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -106,7 +106,7 @@ class _ShareConversationSheetState extends ConsumerState<ShareConversationSheet>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to share: $e'),
+            content: const Text('Failed to share. Please check the emails and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

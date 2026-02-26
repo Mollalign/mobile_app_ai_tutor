@@ -10,6 +10,7 @@ import '../../../../app/router.dart';
 import '../../../../app/theme_provider.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../auth/presentation/providers/providers.dart';
 
 Color _avatarBgColor(String? hex, ColorScheme cs) {
@@ -941,9 +942,17 @@ class _SocialButton extends StatelessWidget {
       child: InkWell(
         onTap: () async {
           HapticFeedback.selectionClick();
-          final uri = Uri.parse(url);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          try {
+            await launchUrl(
+              Uri.parse(url),
+              mode: LaunchMode.externalApplication,
+            );
+          } catch (_) {
+            if (context.mounted) {
+              showAppSnackBar(context,
+                  message: 'Could not open link',
+                  type: SnackBarType.error);
+            }
           }
         },
         borderRadius: BorderRadius.circular(10),
@@ -1048,14 +1057,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       await widget.onSave(name, _socraticMode, _selectedColor);
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated')),
-        );
+        showAppSnackBar(context,
+            message: 'Profile updated successfully',
+            type: SnackBarType.success);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update: $e')),
+          const SnackBar(content: Text('Failed to update profile. Please try again.')),
         );
       }
     } finally {
@@ -1250,8 +1259,9 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       await widget.onSave(current, newPw);
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password changed successfully')));
+        showAppSnackBar(context,
+            message: 'Password changed successfully',
+            type: SnackBarType.success);
       }
     } catch (e) {
       if (mounted) {
@@ -1414,8 +1424,8 @@ class _NotificationPreferencesSheetState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to save preferences. Please try again.')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

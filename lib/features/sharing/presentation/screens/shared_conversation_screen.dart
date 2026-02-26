@@ -81,7 +81,7 @@ class _SharedConversationContentState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to fork: $e'),
+            content: const Text('Could not save this conversation. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

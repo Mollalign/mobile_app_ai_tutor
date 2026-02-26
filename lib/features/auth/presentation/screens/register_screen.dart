@@ -26,6 +26,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  double _passwordStrength = 0;
 
   @override
   void dispose() {
@@ -155,7 +156,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     validator: Validators.password,
                     enabled: !isLoading,
                     textInputAction: TextInputAction.next,
+                    onChanged: (v) =>
+                        setState(() => _passwordStrength = _calcStrength(v)),
                   ).animate().fadeIn(delay: 400.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                  const SizedBox(height: 8),
+                  _PasswordStrengthBar(
+                    strength: _passwordStrength,
+                    colorScheme: colorScheme,
+                  ),
                   const SizedBox(height: AppSpacing.md),
 
                   // Confirm password field
@@ -243,6 +251,67 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  double _calcStrength(String pw) {
+    if (pw.isEmpty) return 0;
+    double score = 0;
+    if (pw.length >= 6) score += 0.2;
+    if (pw.length >= 8) score += 0.15;
+    if (pw.length >= 12) score += 0.15;
+    if (pw.contains(RegExp(r'[A-Z]'))) score += 0.15;
+    if (pw.contains(RegExp(r'[0-9]'))) score += 0.15;
+    if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score += 0.2;
+    return score.clamp(0, 1);
+  }
+}
+
+class _PasswordStrengthBar extends StatelessWidget {
+  final double strength;
+  final ColorScheme colorScheme;
+
+  const _PasswordStrengthBar({
+    required this.strength,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (strength == 0) return const SizedBox.shrink();
+
+    final (label, color) = switch (strength) {
+      < 0.3 => ('Weak', Colors.red),
+      < 0.6 => ('Fair', Colors.orange),
+      < 0.85 => ('Good', colorScheme.primary),
+      _ => ('Strong', Colors.green),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: strength,
+              minHeight: 4,
+              backgroundColor: colorScheme.onSurfaceVariant.withAlpha(30),
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

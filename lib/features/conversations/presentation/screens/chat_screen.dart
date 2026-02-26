@@ -213,11 +213,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: _ChatMessagesList(
-              chatNotifier: chatNotifier,
-              scrollController: _scrollController,
-              conversation: conversation,
-              onSendMessage: _sendMessage,
+            child: Stack(
+              children: [
+                _ChatMessagesList(
+                  chatNotifier: chatNotifier,
+                  scrollController: _scrollController,
+                  conversation: conversation,
+                  onSendMessage: _sendMessage,
+                ),
+                _ScrollToBottomFab(scrollController: _scrollController),
+              ],
             ),
           ),
           _ChatInputWrapper(
@@ -809,6 +814,85 @@ class _SuggestionCard extends StatelessWidget {
                 color: colorScheme.onSurfaceVariant.withAlpha(100),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Scroll to Bottom FAB
+// ════════════════════════════════════════════════════════════════
+
+class _ScrollToBottomFab extends StatefulWidget {
+  final ScrollController scrollController;
+  const _ScrollToBottomFab({required this.scrollController});
+
+  @override
+  State<_ScrollToBottomFab> createState() => _ScrollToBottomFabState();
+}
+
+class _ScrollToBottomFabState extends State<_ScrollToBottomFab> {
+  bool _showButton = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!widget.scrollController.hasClients) return;
+    final show = widget.scrollController.offset > 200;
+    if (show != _showButton) setState(() => _showButton = show);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      bottom: _showButton ? 12 : -48,
+      right: 12,
+      child: Material(
+        color:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+        shape: const CircleBorder(),
+        elevation: 3,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            widget.scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+            );
+          },
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.outlineVariant.withAlpha(isDark ? 40 : 80),
+              ),
+            ),
+            child: Icon(
+              LucideIcons.chevronDown,
+              size: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ),

@@ -57,6 +57,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   const _HeroGreetingCard(),
                   const SizedBox(height: 20),
                   const _QuickActionsRow(),
+                  const SizedBox(height: 20),
+                  const _GettingStartedCard(),
                   const SizedBox(height: 24),
                   const _StatsStrip(),
                   const SizedBox(height: 24),
@@ -366,6 +368,191 @@ class _QuickActionPill extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Getting Started Card (shown only for new users)
+// ============================================================
+
+class _GettingStartedCard extends ConsumerWidget {
+  const _GettingStartedCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectsState = ref.watch(projectsNotifierProvider);
+    final hasProjects = projectsState.whenOrNull(
+          loaded: (projects, _, _) => projects.isNotEmpty,
+        ) ??
+        false;
+
+    if (hasProjects) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final steps = [
+      _StepData(
+        number: '1',
+        title: 'Create a project',
+        subtitle: 'Organize your study materials',
+        icon: LucideIcons.folderPlus,
+        color: colorScheme.primary,
+        onTap: () => CreateProjectSheet.show(context),
+      ),
+      _StepData(
+        number: '2',
+        title: 'Upload documents',
+        subtitle: 'PDFs, notes, or slides',
+        icon: LucideIcons.upload,
+        color: colorScheme.secondary,
+        onTap: null,
+      ),
+      _StepData(
+        number: '3',
+        title: 'Chat with AI',
+        subtitle: 'Ask anything about your material',
+        icon: LucideIcons.sparkles,
+        color: colorScheme.tertiary,
+        onTap: null,
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  colorScheme.surfaceContainerHighest.withAlpha(140),
+                  colorScheme.surfaceContainerHighest.withAlpha(80),
+                ]
+              : [
+                  colorScheme.primaryContainer.withAlpha(60),
+                  colorScheme.secondaryContainer.withAlpha(40),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.primary.withAlpha(isDark ? 25 : 30),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.rocket, size: 16, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Getting Started',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...steps.map((step) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _StepRow(step: step, isDark: isDark),
+              )),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
+  }
+}
+
+class _StepData {
+  final String number;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _StepData({
+    required this.number,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
+}
+
+class _StepRow extends StatelessWidget {
+  final _StepData step;
+  final bool isDark;
+  const _StepRow({required this.step, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: step.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: step.color.withAlpha(isDark ? 30 : 18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    step.number,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: step.color,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      step.title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      step.subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colorScheme.onSurfaceVariant.withAlpha(160),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (step.onTap != null)
+                Icon(LucideIcons.chevronRight,
+                    size: 14,
+                    color: colorScheme.onSurfaceVariant.withAlpha(100)),
+            ],
           ),
         ),
       ),

@@ -2,19 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../providers/providers.dart';
+import 'onboarding_screen.dart';
 
-/// Splash screen shown while checking authentication status.
-/// 
-/// Features a gradient background and animated logo for a premium feel.
-class SplashScreen extends ConsumerWidget {
+const _kOnboardingKey = 'onboarding_complete';
+
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _showOnboarding = false;
+  String _statusText = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+    _scheduleStatusUpdates();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool(_kOnboardingKey) ?? false;
+
+    if (!onboardingDone) {
+      if (mounted) setState(() => _showOnboarding = true);
+      return;
+    }
+
+    _startAuthCheck();
+  }
+
+  void _startAuthCheck() {
+    ref.read(authNotifierProvider.notifier).checkAuthStatus();
+  }
+
+  Future<void> _completeOnboarding() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kOnboardingKey, true);
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _showOnboarding = false);
+      _startAuthCheck();
+    }
+  }
+
+  void _scheduleStatusUpdates() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _statusText = 'Checking your session...');
+    });
+    Future.delayed(const Duration(seconds: 8), () {
+      if (mounted) {
+        setState(() => _statusText = 'Taking longer than expected...');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showOnboarding) {
+      return OnboardingScreen(onComplete: _completeOnboarding);
+    }
+
     final authState = ref.watch(authNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -37,21 +95,15 @@ class SplashScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Branded animated logo
                 const AppLogo(size: 96)
                     .animate()
-                    .scale(
-                      duration: 600.ms,
-                      curve: Curves.elasticOut,
-                    )
+                    .scale(duration: 600.ms, curve: Curves.elasticOut)
                     .then()
                     .shimmer(
                       duration: 1500.ms,
                       color: colorScheme.primary.withAlpha(51),
                     ),
                 const SizedBox(height: AppSpacing.lg),
-
-                // App name
                 Text(
                   'AI Tutor',
                   style: textTheme.headlineMedium?.copyWith(
@@ -60,8 +112,6 @@ class SplashScreen extends ConsumerWidget {
                   ),
                 ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
                 const SizedBox(height: AppSpacing.sm),
-
-                // Tagline
                 Text(
                   'Your personalized learning companion',
                   style: textTheme.bodyLarge?.copyWith(
@@ -69,19 +119,15 @@ class SplashScreen extends ConsumerWidget {
                   ),
                 ).animate().fadeIn(delay: 500.ms, duration: 500.ms),
                 const SizedBox(height: AppSpacing.xxl),
-
-                // Loading indicator or error
                 authState.when(
-                  initial: () => _buildLoadingIndicator(colorScheme),
-                  loading: () => _buildLoadingIndicator(colorScheme),
-                  authenticated: (_) => _buildLoadingIndicator(colorScheme),
-                  unauthenticated: () => _buildLoadingIndicator(colorScheme),
+                  initial: () => _buildLoadingState(colorScheme, textTheme),
+                  loading: () => _buildLoadingState(colorScheme, textTheme),
+                  authenticated: (_) =>
+                      _buildLoadingState(colorScheme, textTheme),
+                  unauthenticated: () =>
+                      _buildLoadingState(colorScheme, textTheme),
                   error: (message) => _buildErrorState(
-                    context,
-                    ref,
-                    message,
-                    colorScheme,
-                    textTheme,
+                    context, ref, message, colorScheme, textTheme,
                   ),
                 ),
               ],
@@ -92,14 +138,26 @@ class SplashScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoadingIndicator(ColorScheme colorScheme) {
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: CircularProgressIndicator(
-        strokeWidth: 3,
-        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-      ),
+  Widget _buildLoadingState(ColorScheme colorScheme, TextTheme textTheme) {
+    return Column(
+      children: [
+        SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          _statusText,
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant.withAlpha(140),
+            fontSize: 12,
+          ),
+        ).animate().fadeIn(duration: 300.ms),
+      ],
     );
   }
 
@@ -115,16 +173,16 @@ class SplashScreen extends ConsumerWidget {
       child: Column(
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               color: colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
               LucideIcons.alertTriangle,
               color: colorScheme.error,
-              size: 28,
+              size: 24,
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -139,9 +197,8 @@ class SplashScreen extends ConsumerWidget {
           SizedBox(
             width: 160,
             child: ElevatedButton(
-              onPressed: () {
-                ref.read(authNotifierProvider.notifier).checkAuthStatus();
-              },
+              onPressed: () =>
+                  ref.read(authNotifierProvider.notifier).checkAuthStatus(),
               child: const Text('Retry'),
             ),
           ),

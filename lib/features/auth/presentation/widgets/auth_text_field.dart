@@ -17,6 +17,7 @@ class AuthTextField extends StatelessWidget {
   final bool enabled;
   final TextInputAction? textInputAction;
   final void Function(String)? onFieldSubmitted;
+  final void Function(String)? onChanged;
 
   const AuthTextField({
     super.key,
@@ -31,6 +32,7 @@ class AuthTextField extends StatelessWidget {
     this.enabled = true,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.onChanged,
   });
 
   @override
@@ -57,6 +59,7 @@ class AuthTextField extends StatelessWidget {
           enabled: enabled,
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
+          onChanged: onChanged,
           style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,

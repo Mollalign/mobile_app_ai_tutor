@@ -6,6 +6,7 @@ import '../features/auth/presentation/providers/providers.dart';
 import '../features/auth/presentation/screens/screens.dart';
 import '../features/conversations/presentation/screens/screens.dart';
 import '../features/dashboard/presentation/screens/screens.dart';
+import '../features/projects/presentation/providers/providers.dart';
 import '../features/projects/presentation/screens/screens.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/progress/presentation/screens/progress_screen.dart';
@@ -113,6 +114,20 @@ class _AuthChangeNotifier extends ChangeNotifier {
 /// to re-evaluate redirects when auth state changes.
 final routerProvider = Provider<GoRouter>((ref) {
   final authChangeNotifier = _AuthChangeNotifier(ref);
+
+  // Invalidate all cached data providers when user logs out or switches accounts.
+  String? lastUserId;
+  ref.listen<AuthState>(authNotifierProvider, (prev, next) {
+    if (next is AuthStateUnauthenticated) {
+      lastUserId = null;
+      ref.invalidate(projectsNotifierProvider);
+    } else if (next is AuthStateAuthenticated) {
+      if (lastUserId != null && lastUserId != next.user.id) {
+        ref.invalidate(projectsNotifierProvider);
+      }
+      lastUserId = next.user.id;
+    }
+  });
 
   return GoRouter(
     initialLocation: AppRoutes.splash,

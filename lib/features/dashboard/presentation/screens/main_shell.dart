@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../shared/widgets/offline_banner.dart';
+import '../../../conversations/presentation/providers/providers.dart';
+import '../../../projects/presentation/providers/providers.dart';
 import '../providers/providers.dart';
 import 'home_tab.dart';
 import 'projects_tab.dart';
@@ -13,8 +15,43 @@ import 'profile_tab.dart';
 /// Main shell with a modern floating bottom navigation.
 ///
 /// Uses IndexedStack to preserve tab state.
-class MainShell extends ConsumerWidget {
+/// Observes app lifecycle to auto-refresh data on resume.
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
+
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshData();
+    }
+  }
+
+  void _refreshData() {
+    try {
+      ref
+          .read(projectsNotifierProvider.notifier)
+          .loadProjects(refresh: true);
+      ref.read(conversationsNotifierProvider).loadConversations(refresh: true);
+    } catch (_) {}
+  }
 
   static const _navItems = [
     _NavItem(icon: LucideIcons.home, activeIcon: LucideIcons.home, label: 'Home'),
@@ -24,7 +61,7 @@ class MainShell extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentIndex = ref.watch(tabControllerProvider);
@@ -121,42 +158,52 @@ class _NavBarItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? colorScheme.primary.withAlpha(26)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              isSelected ? item.activeIcon : item.icon,
-              size: 22,
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-            ),
+    return Semantics(
+      label: item.label,
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          height: 54,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary.withAlpha(26)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  size: 22,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.label,
+                style: textTheme.labelSmall?.copyWith(
+                  fontSize: 10,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            item.label,
-            style: textTheme.labelSmall?.copyWith(
-              fontSize: 10,
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
