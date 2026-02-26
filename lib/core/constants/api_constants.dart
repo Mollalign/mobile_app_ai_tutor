@@ -8,8 +8,8 @@ class ApiConstants {
   // Base Configuration
   // ============================================================
   // This works regardless of WiFi network!
-  static const String baseUrl = 'http://localhost:8000';
-  // static const String baseUrl = 'https://ai-tutor-api-vruq.onrender.com';
+  // static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'https://ai-tutor-api-vruq.onrender.com';
 
   // API version prefix
   static const String apiPrefix = '/api/v1';

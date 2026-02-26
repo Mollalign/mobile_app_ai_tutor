@@ -123,6 +123,12 @@ class ProfileTab extends ConsumerWidget {
                   ),
                 ]),
 
+                // ── Collaboration ───────────────────────────
+                const SizedBox(height: 20),
+                _SectionLabel(label: 'In Collaboration With'),
+                const SizedBox(height: 6),
+                const _CollaboratorCard(),
+
                 // ── About the Developer ──────────────────────
                 const SizedBox(height: 20),
                 _SectionLabel(label: 'About the Developer'),
@@ -156,7 +162,7 @@ class ProfileTab extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    'AI Tutor v1.0.0',
+                    'H2M AI v1.0.0',
                     style: TextStyle(
                       fontSize: 11,
                       color: colorScheme.onSurfaceVariant.withAlpha(100),
@@ -693,20 +699,23 @@ class _ThemeTile extends StatelessWidget {
             const Text('Choose Theme',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
-            ...ThemeMode.values.map((mode) => RadioListTile<ThemeMode>(
+            RadioGroup<ThemeMode>(
+              groupValue: currentMode,
+              onChanged: (v) {
+                if (v == null) return;
+                ref.read(themeModeProvider.notifier).setThemeMode(v);
+                Navigator.pop(context);
+              },
+              child: Column(
+                children: ThemeMode.values.map((mode) => RadioListTile<ThemeMode>(
                   value: mode,
-                  groupValue: currentMode,
-                  onChanged: (v) {
-                    if (v != null) {
-                      ref.read(themeModeProvider.notifier).setThemeMode(v);
-                      Navigator.pop(context);
-                    }
-                  },
                   title: Text(mode.displayName, style: const TextStyle(fontSize: 14)),
                   secondary: Icon(mode.icon, size: 18),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
-                )),
+                )).toList(),
+              ),
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -766,8 +775,129 @@ class _ThemeModeSelector extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════
-// Developer Card
+// Collaborator Card
 // ════════════════════════════════════════════════════════════════
+
+class _CollaboratorCard extends StatelessWidget {
+  const _CollaboratorCard();
+
+  static const _youtubeUrl = 'https://www.youtube.com/@H2MAcademy';
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xFF1A1A2E).withAlpha(200),
+                  const Color(0xFF16213E).withAlpha(160),
+                ]
+              : [
+                  const Color(0xFFFF0000).withAlpha(12),
+                  const Color(0xFFFF4444).withAlpha(8),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFFFF0000).withAlpha(20)
+              : const Color(0xFFFF0000).withAlpha(18),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            HapticFeedback.selectionClick();
+            try {
+              await launchUrl(
+                Uri.parse(_youtubeUrl),
+                mode: LaunchMode.externalApplication,
+              );
+            } catch (_) {}
+          },
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.asset(
+                    'assets/h2m-logo.jpg',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'H2M Academy',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Developed in collaboration',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant.withAlpha(160),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF0000).withAlpha(isDark ? 25 : 15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.youtube,
+                        size: 14,
+                        color: isDark
+                            ? const Color(0xFFFF4444)
+                            : const Color(0xFFCC0000),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Watch',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? const Color(0xFFFF4444)
+                              : const Color(0xFFCC0000),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _DeveloperCard extends StatelessWidget {
   const _DeveloperCard();

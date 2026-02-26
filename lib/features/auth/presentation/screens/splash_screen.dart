@@ -91,47 +91,71 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const AppLogo(size: 96)
-                    .animate()
-                    .scale(duration: 600.ms, curve: Curves.elasticOut)
-                    .then()
-                    .shimmer(
-                      duration: 1500.ms,
-                      color: colorScheme.primary.withAlpha(51),
-                    ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'AI Tutor',
-                  style: textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
+          child: Column(
+            children: [
+              const Spacer(),
+              const AppLogo(size: 96)
+                  .animate()
+                  .scale(duration: 600.ms, curve: Curves.elasticOut)
+                  .then()
+                  .shimmer(
+                    duration: 1500.ms,
+                    color: colorScheme.primary.withAlpha(51),
                   ),
-                ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Your personalized learning companion',
-                  style: textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ).animate().fadeIn(delay: 500.ms, duration: 500.ms),
-                const SizedBox(height: AppSpacing.xxl),
-                authState.when(
-                  initial: () => _buildLoadingState(colorScheme, textTheme),
-                  loading: () => _buildLoadingState(colorScheme, textTheme),
-                  authenticated: (_) =>
-                      _buildLoadingState(colorScheme, textTheme),
-                  unauthenticated: () =>
-                      _buildLoadingState(colorScheme, textTheme),
-                  error: (message) => _buildErrorState(
-                    context, ref, message, colorScheme, textTheme,
-                  ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'H2M AI',
+                style: textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
-              ],
-            ),
+              ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Your personalized learning companion',
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ).animate().fadeIn(delay: 500.ms, duration: 500.ms),
+              const SizedBox(height: AppSpacing.xxl),
+              authState.when(
+                initial: () => _buildLoadingState(colorScheme, textTheme),
+                loading: () => _buildLoadingState(colorScheme, textTheme),
+                authenticated: (_) =>
+                    _buildLoadingState(colorScheme, textTheme),
+                unauthenticated: () =>
+                    _buildLoadingState(colorScheme, textTheme),
+                error: (message) => _buildErrorState(
+                  context, ref, message, colorScheme, textTheme,
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        'assets/h2m-logo.jpg',
+                        width: 28,
+                        height: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'H2M Academy',
+                      style: textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withAlpha(180),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(delay: 700.ms, duration: 500.ms),
+            ],
           ),
         ),
       ),

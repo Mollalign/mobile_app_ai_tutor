@@ -181,7 +181,7 @@ class _AssistantMessageState extends State<_AssistantMessage> {
                 Row(
                   children: [
                     Text(
-                      'AI Tutor',
+                      'H2M AI',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,

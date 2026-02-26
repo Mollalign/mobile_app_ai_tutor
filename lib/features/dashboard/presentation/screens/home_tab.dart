@@ -117,7 +117,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             const AppLogo(size: 36),
             const SizedBox(width: 10),
             Text(
-              'AI Tutor',
+              'H2M AI',
               style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,

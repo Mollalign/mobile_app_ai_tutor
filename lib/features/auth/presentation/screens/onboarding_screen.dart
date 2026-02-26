@@ -106,6 +106,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.asset(
+                      'assets/h2m-logo.jpg',
+                      width: 20,
+                      height: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'H2M Academy',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurfaceVariant.withAlpha(120),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Indicators + Button
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
