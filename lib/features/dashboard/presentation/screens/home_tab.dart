@@ -19,6 +19,7 @@ import '../../../projects/presentation/providers/providers.dart';
 import '../../../knowledge/presentation/providers/knowledge_provider.dart';
 import '../../../knowledge/presentation/widgets/mastery_ring.dart';
 import '../../../projects/presentation/widgets/create_project_sheet.dart';
+import '../../../smart_tutor/presentation/providers/smart_tutor_provider.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -68,6 +69,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   const _GettingStartedCard(),
                   const SizedBox(height: 24),
                   const _StatsStrip(),
+                  const SizedBox(height: 16),
+                  const _SmartInsightsRow(),
                   const SizedBox(height: 24),
                   const _LearningProgressCard(),
                   const SizedBox(height: 24),
@@ -269,6 +272,297 @@ class _HeroGreetingCard extends ConsumerWidget {
         ],
       ),
     ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.08, end: 0);
+  }
+}
+
+// ============================================================
+// Smart Insights Row
+// ============================================================
+
+class _SmartInsightsRow extends ConsumerWidget {
+  const _SmartInsightsRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _InsightPill(
+            icon: LucideIcons.brainCircuit,
+            label: 'Learning Style',
+            color: Colors.purple,
+            isDark: isDark,
+            onTap: () => context.push(AppRoutes.learningStyle),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _InsightPill(
+            icon: LucideIcons.lightbulb,
+            label: 'Suggestions',
+            color: Colors.orange,
+            isDark: isDark,
+            onTap: () => _showSuggestions(context, ref),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 200.ms, duration: 350.ms);
+  }
+
+  void _showSuggestions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _SuggestionsSheet(),
+    );
+  }
+}
+
+class _InsightPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _InsightPill({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? color.withAlpha(18)
+                : color.withAlpha(12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withAlpha(isDark ? 25 : 20)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Icon(LucideIcons.chevronRight,
+                  size: 14, color: colorScheme.onSurfaceVariant.withAlpha(120)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestionsSheet extends ConsumerWidget {
+  const _SuggestionsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final suggestions = ref.watch(smartSuggestionsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Icon(LucideIcons.lightbulb,
+                    size: 20, color: colorScheme.primary),
+                const SizedBox(width: 8),
+                const Text('Smart Suggestions',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+          Flexible(
+            child: suggestions.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('Could not load suggestions',
+                    style:
+                        TextStyle(color: colorScheme.onSurfaceVariant)),
+              ),
+              data: (data) {
+                final weak = (data['weak_topics'] as List?)
+                        ?.cast<Map<String, dynamic>>() ??
+                    [];
+                final notStarted = (data['not_started_topics'] as List?)
+                        ?.cast<Map<String, dynamic>>() ??
+                    [];
+
+                if (weak.isEmpty && notStarted.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text(
+                      'No suggestions yet. Take some quizzes to get personalized recommendations!',
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+
+                return ListView(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20),
+                  shrinkWrap: true,
+                  children: [
+                    if (weak.isNotEmpty) ...[
+                      Text('Topics to Review',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurfaceVariant)),
+                      const SizedBox(height: 8),
+                      ...weak.map((t) => _SuggestionTile(
+                            topic: t,
+                            colorScheme: colorScheme,
+                          )),
+                    ],
+                    if (notStarted.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text('New Topics to Explore',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurfaceVariant)),
+                      const SizedBox(height: 8),
+                      ...notStarted.map((t) => _SuggestionTile(
+                            topic: t,
+                            colorScheme: colorScheme,
+                            isNew: true,
+                          )),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SuggestionTile extends StatelessWidget {
+  final Map<String, dynamic> topic;
+  final ColorScheme colorScheme;
+  final bool isNew;
+
+  const _SuggestionTile({
+    required this.topic,
+    required this.colorScheme,
+    this.isNew = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final name =
+        topic['topic_name'] as String? ?? topic['subtopic_name'] as String? ?? '?';
+    final project = topic['project_name'] as String? ?? '';
+    final mastery = (topic['mastery_score'] as num?)?.toDouble();
+    final action = topic['action'] as String? ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isNew ? LucideIcons.plus : LucideIcons.target,
+                size: 14,
+                color: isNew ? colorScheme.primary : Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(name,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+              if (mastery != null)
+                Text(
+                  '${(mastery * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: mastery < 0.4 ? colorScheme.error : Colors.orange,
+                  ),
+                ),
+            ],
+          ),
+          if (project.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 22),
+              child: Text(project,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurfaceVariant.withAlpha(160))),
+            ),
+          if (action.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 22),
+              child: Text(action,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w500)),
+            ),
+        ],
+      ),
+    );
   }
 }
 

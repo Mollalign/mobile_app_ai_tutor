@@ -72,6 +72,18 @@ class OverviewTab extends ConsumerWidget {
                 ),
               ],
             ).animate().fadeIn(delay: 100.ms, duration: 350.ms),
+            const SizedBox(height: 12),
+
+            // Smart Study banner
+            _SmartStudyBanner(
+              onTap: () => context.push(
+                AppRoutes.smartStudy,
+                extra: {
+                  'projectId': project.id,
+                  'projectName': project.name,
+                },
+              ),
+            ).animate().fadeIn(delay: 150.ms, duration: 350.ms),
             const SizedBox(height: 20),
 
             // Details
@@ -543,6 +555,84 @@ class _ActionCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SmartStudyBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SmartStudyBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      const Color(0xFF1A1A4E).withAlpha(180),
+                      const Color(0xFF2D1B69).withAlpha(140),
+                    ]
+                  : [
+                      colorScheme.primary.withAlpha(15),
+                      colorScheme.tertiary.withAlpha(10),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.primary.withAlpha(isDark ? 30 : 20),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [colorScheme.primary, colorScheme.tertiary],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child:
+                    const Icon(LucideIcons.sparkles, size: 22, color: Colors.white),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Smart Study',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Exam readiness, study plan & cross-topic insights',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(LucideIcons.chevronRight,
+                  size: 18, color: colorScheme.onSurfaceVariant),
+            ],
           ),
         ),
       ),

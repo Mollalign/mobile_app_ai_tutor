@@ -11,6 +11,8 @@ import '../features/projects/presentation/screens/screens.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/progress/presentation/screens/progress_screen.dart';
 import '../features/sharing/presentation/screens/screens.dart';
+import '../features/smart_tutor/presentation/screens/smart_study_screen.dart';
+import '../features/smart_tutor/presentation/screens/learning_style_screen.dart';
 
 /// Fade-through page transition for top-level routes.
 CustomTransitionPage<void> _fadeThroughPage({
@@ -90,6 +92,10 @@ class AppRoutes {
 
   // Notifications route
   static const String notifications = '/notifications';
+
+  // Smart tutor routes
+  static const String smartStudy = '/smart-study';
+  static const String learningStyle = '/learning-style';
 
   // Sharing routes
   static const String myShares = '/my-shares';
@@ -267,6 +273,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _slideUpPage(
           key: state.pageKey,
           child: const NotificationsScreen(),
+        ),
+      ),
+
+      // Smart Tutor Routes
+      GoRoute(
+        path: AppRoutes.smartStudy,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, String>? ?? {};
+          return _slideUpPage(
+            key: state.pageKey,
+            child: SmartStudyScreen(
+              projectId: extra['projectId'] ?? '',
+              projectName: extra['projectName'] ?? 'Project',
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.learningStyle,
+        pageBuilder: (context, state) => _slideUpPage(
+          key: state.pageKey,
+          child: const LearningStyleScreen(),
         ),
       ),
 

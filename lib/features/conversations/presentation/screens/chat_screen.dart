@@ -39,6 +39,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+  void _popAndRefresh() {
+    ref.read(conversationsNotifierProvider).loadConversations(refresh: true);
+    context.pop();
+  }
+
   @override
   void dispose() {
     _notifier?.removeListener(_onNotifierChanged);
@@ -130,7 +135,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final conversation = state.conversation;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _popAndRefresh();
+      },
+      child: Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
@@ -140,7 +150,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         centerTitle: true,
         titleSpacing: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: _popAndRefresh,
           icon: Icon(
             LucideIcons.chevronLeft,
             size: 20,
@@ -232,6 +242,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 

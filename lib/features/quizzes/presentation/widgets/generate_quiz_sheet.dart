@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../smart_tutor/presentation/providers/smart_tutor_provider.dart';
 import '../providers/quiz_provider.dart';
 
 class GenerateQuizSheet extends ConsumerStatefulWidget {
@@ -32,6 +33,7 @@ class _GenerateQuizSheetState extends ConsumerState<GenerateQuizSheet> {
   String _difficulty = 'medium';
   final _topicController = TextEditingController();
   final _questionTypes = <String>{'multiple_choice', 'true_false'};
+  bool _appliedAdaptive = false;
 
   @override
   void dispose() {
@@ -89,6 +91,20 @@ class _GenerateQuizSheetState extends ConsumerState<GenerateQuizSheet> {
                   }).toList(),
                 ),
                 const SizedBox(height: AppSpacing.md),
+
+                // Adaptive difficulty recommendation
+                _AdaptiveDifficultyBanner(
+                  projectId: widget.projectId,
+                  onApply: (d) {
+                    if (!_appliedAdaptive) {
+                      setState(() {
+                        _difficulty = d;
+                        _appliedAdaptive = true;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
 
                 // Difficulty
                 Text('Difficulty', style: textTheme.labelLarge),
@@ -196,5 +212,72 @@ class _GenerateQuizSheetState extends ConsumerState<GenerateQuizSheet> {
     if (quiz != null && mounted) {
       Navigator.of(context).pop(quiz);
     }
+  }
+}
+
+class _AdaptiveDifficultyBanner extends ConsumerWidget {
+  final String projectId;
+  final ValueChanged<String> onApply;
+  const _AdaptiveDifficultyBanner({
+    required this.projectId,
+    required this.onApply,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final adaptive = ref.watch(adaptiveDifficultyProvider(projectId));
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return adaptive.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (data) {
+        final rec = data['recommended_difficulty'] as String? ?? 'medium';
+        final reason = data['reason'] as String? ?? '';
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onApply(rec);
+        });
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withAlpha(40),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.primary.withAlpha(30)),
+          ),
+          child: Row(
+            children: [
+              Icon(LucideIcons.sparkles,
+                  size: 16, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI recommends: ${rec.toUpperCase()}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    if (reason.isNotEmpty)
+                      Text(
+                        reason,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
