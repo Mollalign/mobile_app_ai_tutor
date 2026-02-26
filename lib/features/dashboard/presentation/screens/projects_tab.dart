@@ -218,7 +218,7 @@ class _ProjectsTabState extends ConsumerState<ProjectsTab> {
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 0.88,
+                      childAspectRatio: 0.82,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
