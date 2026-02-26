@@ -155,6 +155,13 @@ class _ProjectsTabState extends ConsumerState<ProjectsTab> {
                       ) ??
                       const SizedBox.shrink(),
                   const SizedBox(height: 8),
+                  const FirstVisitTip(
+                    tipId: 'projects',
+                    message:
+                        'Create projects to organize your study materials. '
+                        'Upload documents and the AI learns from them.',
+                    icon: LucideIcons.folderPlus,
+                  ),
                 ],
               ),
             ),

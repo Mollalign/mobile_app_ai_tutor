@@ -56,6 +56,13 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 delegate: SliverChildListDelegate([
                   const _HeroGreetingCard(),
                   const SizedBox(height: 20),
+                  const FirstVisitTip(
+                    tipId: 'home',
+                    message:
+                        'Welcome! This is your dashboard. Pull down to refresh, '
+                        'and use quick actions below to get started.',
+                    icon: LucideIcons.sparkles,
+                  ),
                   const _QuickActionsRow(),
                   const SizedBox(height: 20),
                   const _GettingStartedCard(),

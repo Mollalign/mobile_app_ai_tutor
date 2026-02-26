@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
+import '../../../../core/services/tutorial_service.dart';
 import '../../../../shared/widgets/offline_banner.dart';
 import '../../../conversations/presentation/providers/providers.dart';
 import '../../../projects/presentation/providers/providers.dart';
@@ -12,23 +14,28 @@ import 'projects_tab.dart';
 import 'chat_tab.dart';
 import 'profile_tab.dart';
 
-/// Main shell with a modern floating bottom navigation.
-///
-/// Uses IndexedStack to preserve tab state.
-/// Observes app lifecycle to auto-refresh data on resume.
+/// GlobalKeys exposed so the tutorial can target nav items.
+final navHomeKey = GlobalKey();
+final navProjectsKey = GlobalKey();
+final navChatKey = GlobalKey();
+final navProfileKey = GlobalKey();
+
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  ConsumerState<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell>
+class MainShellState extends ConsumerState<MainShell>
     with WidgetsBindingObserver {
+  bool _tutorialTriggered = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowTutorial());
   }
 
   @override
@@ -53,11 +60,108 @@ class _MainShellState extends ConsumerState<MainShell>
     } catch (_) {}
   }
 
+  Future<void> _maybeShowTutorial() async {
+    if (_tutorialTriggered) return;
+    _tutorialTriggered = true;
+
+    final service = ref.read(tutorialServiceProvider);
+    final shouldShow = await service.shouldShowTutorial();
+    if (!shouldShow || !mounted) return;
+
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+
+    _showTutorial();
+  }
+
+  void _showTutorial() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final service = ref.read(tutorialServiceProvider);
+
+    final targets = [
+      buildTarget(
+        key: navHomeKey,
+        title: 'Dashboard',
+        description:
+            'Your home screen. See your stats, recent conversations, '
+            'and projects at a glance.',
+        icon: LucideIcons.home,
+        color: colorScheme.primary,
+        align: ContentAlign.top,
+      ),
+      buildTarget(
+        key: navProjectsKey,
+        title: 'Projects',
+        description:
+            'Create projects for each course or topic. Upload documents '
+            'and the AI will learn from your materials.',
+        icon: LucideIcons.folderOpen,
+        color: colorScheme.secondary,
+        align: ContentAlign.top,
+      ),
+      buildTarget(
+        key: navChatKey,
+        title: 'Chat with AI',
+        description:
+            'Ask questions, get explanations, and learn at your own pace. '
+            'The AI adapts to your level.',
+        icon: LucideIcons.messageCircle,
+        color: colorScheme.tertiary,
+        align: ContentAlign.top,
+      ),
+      buildTarget(
+        key: navProfileKey,
+        title: 'Your Profile',
+        description:
+            'Customize your learning preferences, change theme, '
+            'and manage your account.',
+        icon: LucideIcons.user,
+        color: colorScheme.primary,
+        align: ContentAlign.top,
+      ),
+    ];
+
+    service.showCoachMark(
+      context: context,
+      targets: targets,
+    );
+  }
+
+  /// Called from profile tab to replay the tutorial.
+  void replayTutorial() {
+    final service = ref.read(tutorialServiceProvider);
+    service.resetTutorial().then((_) {
+      ref.read(tabControllerProvider.notifier).goToHome();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _showTutorial();
+      });
+    });
+  }
+
   static const _navItems = [
-    _NavItem(icon: LucideIcons.home, activeIcon: LucideIcons.home, label: 'Home'),
-    _NavItem(icon: LucideIcons.folderOpen, activeIcon: LucideIcons.folder, label: 'Projects'),
-    _NavItem(icon: LucideIcons.messageCircle, activeIcon: LucideIcons.messageSquare, label: 'Chat'),
-    _NavItem(icon: LucideIcons.user, activeIcon: LucideIcons.userCircle, label: 'Profile'),
+    _NavItem(
+        icon: LucideIcons.home,
+        activeIcon: LucideIcons.home,
+        label: 'Home'),
+    _NavItem(
+        icon: LucideIcons.folderOpen,
+        activeIcon: LucideIcons.folder,
+        label: 'Projects'),
+    _NavItem(
+        icon: LucideIcons.messageCircle,
+        activeIcon: LucideIcons.messageSquare,
+        label: 'Chat'),
+    _NavItem(
+        icon: LucideIcons.user,
+        activeIcon: LucideIcons.userCircle,
+        label: 'Profile'),
+  ];
+
+  static final _navKeys = [
+    navHomeKey,
+    navProjectsKey,
+    navChatKey,
+    navProfileKey,
   ];
 
   @override
@@ -111,6 +215,7 @@ class _MainShellState extends ConsumerState<MainShell>
 
                 return Expanded(
                   child: _NavBarItem(
+                    key: _navKeys[index],
                     item: item,
                     isSelected: isSelected,
                     onTap: () {
@@ -148,6 +253,7 @@ class _NavBarItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavBarItem({
+    super.key,
     required this.item,
     required this.isSelected,
     required this.onTap,

@@ -12,6 +12,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../auth/presentation/providers/providers.dart';
+import 'main_shell.dart';
 
 Color _avatarBgColor(String? hex, ColorScheme cs) {
   if (hex != null && hex.length == 7) {
@@ -103,6 +104,16 @@ class ProfileTab extends ConsumerWidget {
                     title: 'Help & FAQ',
                     subtitle: 'Get help using the app',
                     onTap: () {},
+                  ),
+                  _SettingsTile(
+                    icon: LucideIcons.play,
+                    title: 'Replay Tutorial',
+                    subtitle: 'See the app walkthrough again',
+                    onTap: () {
+                      final shellState = context
+                          .findAncestorStateOfType<MainShellState>();
+                      shellState?.replayTutorial();
+                    },
                   ),
                   _SettingsTile(
                     icon: LucideIcons.messageSquare,

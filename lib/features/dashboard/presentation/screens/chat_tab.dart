@@ -148,6 +148,20 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                 ),
               ),
 
+              // Tip
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: FirstVisitTip(
+                    tipId: 'chat',
+                    message:
+                        'Start a new chat to ask questions. '
+                        'The AI adapts to your level and uses your uploaded materials.',
+                    icon: LucideIcons.messageCircle,
+                  ),
+                ),
+              ),
+
               // Content
               state.when(
                 initial: () => const SliverFillRemaining(
